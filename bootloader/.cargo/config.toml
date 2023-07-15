@@ -1,0 +1,15 @@
+[build]
+target = "x86_64-unknown-uefi"
+
+[target.x86_64-unknown-uefi]
+# runner = "./qemu.sh"
+
+[unstable]
+build-std = ["core", "compiler_builtins", "alloc", "panic_abort"]
+build-std-features = ["compiler-builtins-mem"]
+unstable-options = true
+
+[[bin]]
+name = "bootloader"
+test = false
+bench = false
