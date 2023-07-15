@@ -8,3 +8,8 @@ edition = "2021"
 [dependencies]
 uefi = "0.24.0"
 uefi-services = "0.21.0"
+
+[[bin]]
+name = "bootloader"
+test = false
+bench = false
