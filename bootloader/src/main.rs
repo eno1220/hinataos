@@ -27,6 +27,7 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .memory_map(&mut map_buffer)
         .unwrap();
 
+    // todo: 内容ごとに表示する
     memory_map.entries().for_each(|entry| {
         uefi_services::println!("entry: {:?}", entry);
     });
