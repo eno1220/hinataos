@@ -5,7 +5,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use elf::{endian::AnyEndian, ElfBytes};
-use uefi::prelude::*;
+use uefi::{prelude::*, table::boot};
 
 #[entry]
 fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
@@ -84,6 +84,7 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
             panic!("Failed to parse kernel file: {:?}", error);
         }
     };
+    let entry_point = file.ehdr.e_entry;
 
     let mut first_addr = u64::MAX;
     let mut last_addr = u64::MIN;
@@ -142,6 +143,15 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         }
     }
 
-    system_table.boot_services().stall(100_000_000);
+    drop(file_protocol);
+
+    let (_, _) = system_table.exit_boot_services();
+
+    unsafe {
+        let entry_point: extern "C" fn() -> ! = core::mem::transmute(entry_point);
+        entry_point();
+    }
+
+    #[allow(unreachable_code)]
     Status::SUCCESS
 }
