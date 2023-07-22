@@ -4,8 +4,9 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
+use common::types::{GraphicsInfo, PixelFormat};
 use elf::{endian::AnyEndian, ElfBytes};
-use uefi::{prelude::*, table::boot};
+use uefi::{prelude::*, proto::console::gop::GraphicsOutput, table::boot::SearchType};
 
 #[entry]
 fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
@@ -143,13 +144,51 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         }
     }
 
+    let gop_handle =
+        match boot_services.locate_handle_buffer(SearchType::from_proto::<GraphicsOutput>()) {
+            Ok(handle) => handle,
+            Err(err) => {
+                panic!("Failed to locate_handle_buffer, {:?}", err);
+            }
+        };
+
+    let mut gop = match boot_services.open_protocol_exclusive::<GraphicsOutput>(gop_handle[0]) {
+        Ok(gop) => gop,
+        Err(err) => {
+            panic!("Failed to open_protocol_exclusive, {:?}", err);
+        }
+    };
+
+    uefi_services::println!("gop: {:?}", gop.current_mode_info());
+
+    let info = gop.current_mode_info();
+    let pixel_format = match info.pixel_format() {
+        uefi::proto::console::gop::PixelFormat::Rgb => PixelFormat::Rgb,
+        uefi::proto::console::gop::PixelFormat::Bgr => PixelFormat::Bgr,
+        _ => panic!("Unsupported pixel format"),
+    };
+    let mut frame_buffer = gop.frame_buffer();
+    let graphics_info: GraphicsInfo = GraphicsInfo::new(
+        info.resolution().0,
+        info.resolution().1,
+        info.stride(),
+        frame_buffer.as_mut_ptr(),
+        pixel_format,
+    );
+
+    uefi_services::println!("graphicsInfo: {:?}", graphics_info);
+
+    drop(gop_handle);
+    drop(gop);
     drop(file_protocol);
 
     let (_, _) = system_table.exit_boot_services();
 
     unsafe {
-        let entry_point: extern "C" fn() -> ! = core::mem::transmute(entry_point);
-        entry_point();
+        // ABIが違う
+        let entry_point: extern "sysv64" fn(graphics_info: GraphicsInfo) -> ! =
+            core::mem::transmute(entry_point);
+        entry_point(graphics_info);
     }
 
     #[allow(unreachable_code)]
