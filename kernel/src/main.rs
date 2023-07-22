@@ -24,6 +24,7 @@ pub extern "C" fn kernel_main(graphics_info: GraphicsInfo) -> ! {
 }
 
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+fn panic(info: &PanicInfo) -> ! {
+    serial_println!("{info}");
     loop {}
 }
