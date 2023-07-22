@@ -3,7 +3,7 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
+use alloc::vec;
 use common::types::{GraphicsInfo, PixelFormat};
 use elf::{endian::AnyEndian, ElfBytes};
 use uefi::{prelude::*, proto::console::gop::GraphicsOutput, table::boot::SearchType};
@@ -18,12 +18,7 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     // メモリマップ用のバッファを確保する
     let map_size = system_table.boot_services().memory_map_size().map_size + 4096;
     uefi_services::println!("map_size: {}", map_size);
-    let mut map_buffer = Vec::with_capacity(map_size);
-    // with_capacity だけだと、Vec の長さは 0 なので、
-    // ここで明示的に長さを設定する
-    unsafe {
-        map_buffer.set_len(map_size);
-    }
+    let mut map_buffer = vec![0; map_size];
     // todo: Error handling
     let memory_map = system_table
         .boot_services()
