@@ -5,13 +5,14 @@
 
 use common::types::GraphicsInfo;
 use core::panic::PanicInfo;
-use kernel::graphics::graphics_init;
+use kernel::graphics::{graphics_init,write_something};
 use kernel::serial_println;
 
 #[no_mangle]
 pub extern "C" fn kernel_main(graphics_info: GraphicsInfo) -> ! {
     serial_println!("Hello,world{}", "!");
     graphics_init(graphics_info);
+    write_something();
     loop {}
 }
 
