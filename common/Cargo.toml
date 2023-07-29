@@ -7,7 +7,3 @@ edition = "2021"
 
 [dependencies]
 
-[[bin]]
-name = "common"
-test = false
-bench = false

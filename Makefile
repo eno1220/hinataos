@@ -14,6 +14,7 @@ run: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unk
 		-drive if=pflash,file=thirdparty/RELEASEX64_OVMF_VARS.fd,format=raw \
 		-drive format=raw,file=fat:rw:mnt \
 		-serial stdio \
+		-vga std \
 		-no-reboot \
 
 run-gdb: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unknown-uefi/debug/bootloader.efi

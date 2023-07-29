@@ -9,6 +9,7 @@ edition = "2021"
 common = { path = "../common" }
 x86_64 = { version = "0.14.10", features = ["instructions","nightly"] }
 spin = { version ="0.9.8" }
+volatile = "0.5.1"
 
 [[bin]]
 name = "kernel"
