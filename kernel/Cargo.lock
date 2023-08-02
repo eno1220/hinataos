@@ -29,8 +29,10 @@ name = "kernel"
 version = "0.1.0"
 dependencies = [
  "common",
+ "rtm",
  "spin",
  "volatile 0.5.1",
+ "x86",
  "x86_64",
 ]
 
@@ -43,6 +45,21 @@ dependencies = [
  "autocfg",
  "scopeguard",
 ]
+
+[[package]]
+name = "raw-cpuid"
+version = "10.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c297679cb867470fa8c9f67dbba74a78d78e3e98d7cf2b08d6d71540f797332"
+dependencies = [
+ "bitflags",
+]
+
+[[package]]
+name = "rtm"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b61347035656e3839ecfd1803311f1c14c63cf83472a96d5eeda3306b501d9b"
 
 [[package]]
 name = "rustversion"
@@ -76,6 +93,17 @@ name = "volatile"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9eaac9f9d9b7ae00cdd43e21b15e58ccacd903e6d29131d7536765a61969d25e"
+
+[[package]]
+name = "x86"
+version = "0.52.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2781db97787217ad2a2845c396a5efe286f87467a5810836db6d74926e94a385"
+dependencies = [
+ "bit_field",
+ "bitflags",
+ "raw-cpuid",
+]
 
 [[package]]
 name = "x86_64"

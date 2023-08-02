@@ -1,127 +1,82 @@
-use common::types::GraphicsInfo;
-use spin::{Lazy, Mutex};
+// pixel_formatがBgr形式であることを前提としているので注意
 use crate::font::FONT;
-struct Color {
-    r: u8,
-    g: u8,
-    b: u8,
+
+pub trait PixelBuffer {
+    fn buffer(&self) -> *mut u8;
+    fn width(&self) -> usize;
+    fn height(&self) -> usize;
+    fn pixels_per_line(&self) -> usize;
+    fn calc_offset(&self, x: usize, y: usize) -> usize {
+        (self.pixels_per_line() * y + x) as usize * 4
+    }
+    fn is_valid(&self, x: usize, y: usize) -> bool {
+        x < self.width() && y < self.height()
+    }
 }
 
-pub struct PixelWriter {
-    graphics_info: GraphicsInfo,
-    write: fn(&mut Self, x: usize, y: usize, color: &Color),
+#[derive(Debug, Clone, Copy)]
+pub struct PixelInfo {
+    pub buffer: *mut u8,
+    pub width: usize,
+    pub height: usize,
+    pub pixels_per_line: usize,
 }
 
-impl PixelWriter {
-    pub fn new(graphics_info: GraphicsInfo) -> Self {
-        let write = match graphics_info.pixel_format() {
-            common::types::PixelFormat::Rgb => Self::write_rgb,
-            common::types::PixelFormat::Bgr => Self::write_bgr,
-        };
-        Self {
-            graphics_info,
-            write,
+impl PixelBuffer for PixelInfo {
+    fn buffer(&self) -> *mut u8 {
+        self.buffer
+    }
+    fn width(&self) -> usize {
+        self.width
+    }
+    fn height(&self) -> usize {
+        self.height
+    }
+    fn pixels_per_line(&self) -> usize {
+        self.pixels_per_line
+    }
+}
+
+pub fn write_pixel<T: PixelBuffer>(buffer: &mut T, x: usize, y: usize, color: u32) {
+    if !buffer.is_valid(x, y) {
+        return;
+    }
+    unsafe {
+        let pixel = buffer.buffer().add(buffer.calc_offset(x, y));
+        pixel.write_volatile(color as u8);
+        pixel.add(1).write_volatile((color >> 8) as u8);
+        pixel.add(2).write_volatile((color >> 16) as u8);
+    }
+}
+
+pub fn write_rect<T: PixelBuffer>(
+    buffer: &mut T,
+    x: usize,
+    y: usize,
+    width: usize,
+    height: usize,
+    color: u32,
+) {
+    if !buffer.is_valid(x, y) && !buffer.is_valid(x + width - 1, y + height - 1) {
+        return;
+    }
+    for i in 0..height {
+        for j in 0..width {
+            write_pixel(buffer, x + j, y + i, color);
         }
     }
+}
 
-    fn write_rgb(&mut self, x: usize, y: usize, color: &Color) {
-        let offset = (y * self.graphics_info.pixels_per_scan_line() + x) * 4;
-        unsafe {
-            self.graphics_info
-                .frame_buffer_base()
-                .add(offset)
-                .write_volatile(color.r);
-            self.graphics_info
-                .frame_buffer_base()
-                .add(offset + 1)
-                .write_volatile(color.g);
-            self.graphics_info
-                .frame_buffer_base()
-                .add(offset + 2)
-                .write_volatile(color.b);
-        }
+pub fn write_char<T: PixelBuffer>(buffer: &mut T, x: usize, y: usize, color: u32, c: char) {
+    if !buffer.is_valid(x, y) {
+        return;
     }
-
-    fn write_bgr(&mut self, x: usize, y: usize, color: &Color) {
-        let offset = (y * self.graphics_info.pixels_per_scan_line() + x) * 4;
-        unsafe {
-            self.graphics_info
-                .frame_buffer_base()
-                .add(offset)
-                .write_volatile(color.b);
-            self.graphics_info
-                .frame_buffer_base()
-                .add(offset + 1)
-                .write_volatile(color.g);
-            self.graphics_info
-                .frame_buffer_base()
-                .add(offset + 2)
-                .write_volatile(color.r);
-        }
-    }
-
-    fn write_pixel(&mut self, x: usize, y: usize, color: &Color) {
-        (self.write)(self, x, y, color);
-    }
-
-    fn write_rect(&mut self, x: usize, y: usize, width: usize, height: usize, color: &Color) {
-        for dy in 0..height {
-            for dx in 0..width {
-                self.write_pixel(x + dx, y + dy, color);
-            }
-        }
-    }
-
-    fn fill(&mut self, color: &Color) {
-        self.write_rect(
-            0,
-            0,
-            self.graphics_info.horizontal_resolution(),
-            self.graphics_info.vertical_resolution(),
-            color,
-        );
-    }
-
-    fn clear(&mut self) {
-        self.fill(&Color { r: 0, g: 0, b: 0 });
-    }
-
-    fn write_ascii(&mut self, x: usize, y: usize, c: char, color: &Color) {
-        let font = &FONT[c as usize];
-        for dy in 0..16 {
-            for dx in 0..8 {
-                if (font[dy] >> (7 - dx)) & 1 == 1 {
-                    self.write_pixel(x + dx, y + dy, color);
-                }
+    let font = FONT[c as usize];
+    for i in 0..16 {
+        for j in 0..8 {
+            if font[i] & 1 << (7 - j) != 0 {
+                write_pixel(buffer, x + j, y + i, color);
             }
         }
     }
 }
-
-pub static mut PIXEL_WRITER: Lazy<Mutex<Option<PixelWriter>>> = Lazy::new(|| Mutex::new(None));
-
-pub fn graphics_init(graphics_info: GraphicsInfo) {
-    let mut pixel_writer = unsafe { PIXEL_WRITER.lock() };
-    *pixel_writer = Some(PixelWriter::new(graphics_info));
-    pixel_writer.as_mut().unwrap().clear();
-}
-
-pub fn write_something() {
-    let mut pixel_writer = unsafe { PIXEL_WRITER.lock() };
-    pixel_writer.as_mut().unwrap().write_ascii(0, 0, 'H', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(8, 0, 'e', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(16, 0, 'l', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(24, 0, 'l', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(32, 0, 'o', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(40, 0, ',', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(48, 0, 'w', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(56, 0, 'o', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(64, 0, 'r', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(72, 0, 'l', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(80, 0, 'd', &Color { r: 255, g: 255, b: 255 });
-    pixel_writer.as_mut().unwrap().write_ascii(88, 0, '!', &Color { r: 255, g: 255, b: 255 });
-
-}
-
-
-

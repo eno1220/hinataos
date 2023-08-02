@@ -10,6 +10,8 @@ common = { path = "../common" }
 x86_64 = { version = "0.14.10", features = ["instructions","nightly"] }
 spin = { version ="0.9.8" }
 volatile = "0.5.1"
+x86 = "0.52.0"
+rtm = "1.0.0"
 
 [[bin]]
 name = "kernel"
