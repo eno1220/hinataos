@@ -8,4 +8,3 @@ pub mod font;
 pub mod graphics;
 pub mod print;
 pub mod serial;
-pub mod vga;
