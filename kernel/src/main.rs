@@ -11,11 +11,12 @@ use kernel::console::Console;
 use kernel::graphics::PixelInfo;
 use kernel::print::GLOBAL_POINTER;
 use kernel::serial::{com_init, IO_ADDR_COM1};
-use kernel::serial_println;
+use kernel::println;
 
 #[no_mangle]
 pub extern "C" fn kernel_main(graphics_info: GraphicsInfo) -> ! {
     console_init(graphics_info);
+    println!("Hello HinataOS{}", "!");
     cache();
     loop {
         unsafe { asm!("hlt") };
@@ -24,7 +25,7 @@ pub extern "C" fn kernel_main(graphics_info: GraphicsInfo) -> ! {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    serial_println!("{info}");
+    println!("{info}");
     loop {
         unsafe { asm!("hlt") };
     }
