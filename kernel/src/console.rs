@@ -1,4 +1,4 @@
-use crate::graphics::{write_char, write_pixel, write_rect, PixelBuffer};
+use crate::graphics::{write_char, write_pixel, write_rect, PixelBuffer,transfer_rect};
 
 pub const CONSOLE_WIDTH: usize = 40;
 pub const CONSOLE_HEIGHT: usize = 25;
@@ -34,30 +34,26 @@ impl<T: PixelBuffer> Console<T> {
         self.cursor_y += 1;
         if self.cursor_y >= CONSOLE_HEIGHT {
             self.cursor_y = CONSOLE_HEIGHT - 1;
+            
             for row in 1..CONSOLE_HEIGHT {
-                write_rect(
-                    &mut self.buffer,
-                    0,
-                    (row - 1) * ROW_HEIGHT,
-                    self.width,
-                    ROW_HEIGHT,
-                    0x000000,
-                );
                 for col in 0..CONSOLE_WIDTH {
                     let character = self.text_buffer[row][col];
                     self.text_buffer[row - 1][col] = character;
-                    write_char(
+                    transfer_rect(
                         &mut self.buffer,
                         col * 8,
+                        row * 16,
+                        col * 8,
                         (row - 1) * 16,
-                        0xffffff,
-                        character,
+                        8,
+                        16
                     );
                 }
             }
             for col in 0..CONSOLE_WIDTH {
                 self.text_buffer[CONSOLE_HEIGHT - 1][col] = ' ';
             }
+            
             write_rect(
                 &mut self.buffer,
                 0,

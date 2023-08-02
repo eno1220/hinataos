@@ -10,7 +10,7 @@ run: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unk
 	cp kernel/target/x86_64-hinataos/debug/kernel.elf mnt/kernel.elf &&\
 	cp bootloader/target/x86_64-unknown-uefi/debug/bootloader.efi mnt/EFI/BOOT/BOOTX64.EFI &&\
 	qemu-system-x86_64 \
-		-cpu qemu64,tsc-frequency=1500000000,tsc_adjust \
+		-cpu Skylake-Client \
 		-drive if=pflash,file=thirdparty/RELEASEX64_OVMF.fd,format=raw,readonly=on \
 		-drive format=raw,file=fat:rw:mnt \
 		-serial stdio \
@@ -19,7 +19,7 @@ run: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unk
 
 run-gdb: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unknown-uefi/debug/bootloader.efi
 	qemu-system-x86_64 \
-		-cpu qemu64,tsc-frequency=1500000000 \
+		-cpu Skylake-Client \
 		-drive if=pflash,file=thirdparty/RELEASEX64_OVMF_CODE.fd,format=raw,readonly=on \
 		-drive if=pflash,file=thirdparty/RELEASEX64_OVMF_VARS.fd,format=raw \
 		-drive format=raw,file=fat:rw:mnt \

@@ -80,3 +80,24 @@ pub fn write_char<T: PixelBuffer>(buffer: &mut T, x: usize, y: usize, color: u32
         }
     }
 }
+
+pub fn transfer_rect<T: PixelBuffer>(
+    src: &mut T,
+    src_x: usize,
+    src_y: usize,
+    dest_x: usize,
+    dest_y: usize,
+    width: usize,
+    height: usize,
+) {
+    if !src.is_valid(src_x, src_y) && !src.is_valid(src_x + width - 1, src_y + height - 1) {
+        return;
+    }
+    for i in 0..height {
+        unsafe {
+            let src_pixel = src.buffer().add(src.calc_offset(src_x, src_y + i));
+            let dest_pixel = src.buffer().add(src.calc_offset(dest_x, dest_y + i));
+            core::ptr::copy_nonoverlapping(src_pixel, dest_pixel, width * 4);
+        }
+    }
+}
