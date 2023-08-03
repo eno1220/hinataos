@@ -4,7 +4,6 @@ use crate::console::Console;
 use crate::graphics::PixelInfo;
 use crate::serial::SerialPort;
 
-
 // https://github.com/hikalium/wasabi/blob/main/os/src/print.rs
 pub struct GlobalPointer {
     console: RefCell<Option<Console<PixelInfo>>>,
@@ -56,7 +55,7 @@ pub fn _serial_print(args: core::fmt::Arguments) {
 
 #[macro_export]
 macro_rules! serial_print{
-    ($($arg:tt)*) => ($crate::print::_serial_print(format_args!($($arg)*))); 
+    ($($arg:tt)*) => ($crate::print::_serial_print(format_args!($($arg)*)));
 }
 
 #[macro_export]

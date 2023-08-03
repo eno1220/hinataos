@@ -2,9 +2,9 @@ use core::arch::asm;
 use core::arch::x86_64::_mm_clflush;
 use x86;
 
+use crate::println;
 #[allow(unused_imports)]
 use crate::serial_println;
-use crate::println;
 
 const PAGE_SIZE: usize = 4096;
 
@@ -15,7 +15,7 @@ unsafe fn flush(addr: *const u8) {
 
 #[inline(always)]
 unsafe fn flush_buffer(buffer: *const u8) {
-    for i in 0..2 {
+    for i in 0..0x80 {
         flush(buffer.add(i * PAGE_SIZE));
     }
 }
@@ -35,10 +35,11 @@ unsafe fn guess_bit_once(seed: *const u8, buffer: *mut u8) -> u8 {
     flush_buffer(buffer);
 
     buffer
-        .add(seed as usize * PAGE_SIZE)
-        .write_volatile(1);
+        .add((seed.read_volatile() as usize) * PAGE_SIZE)
+        .write_volatile(0);
 
-    (0..2)
+    // 本当は 256 だけど、まあ文字範囲的に 80 で十分（256だと配列が大きすぎてクラッシュする）
+    (0..0x80)
         .min_by_key(|i| probe(buffer.add(i * PAGE_SIZE)))
         .unwrap() as u8
 }
@@ -57,7 +58,7 @@ fn calc_access_time<F: Fn()>(f: F) -> u64 {
 #[inline(never)]
 unsafe fn guess_bit(seed: *const u8, buffer: *mut u8) -> u8 {
     const TRY_COUNT: usize = 100;
-    let mut hit_counts = [0; 128];
+    let mut hit_counts = [0; 0x80];
 
     for _ in 0..TRY_COUNT {
         hit_counts[guess_bit_once(seed, buffer) as usize] += 1;
@@ -66,57 +67,21 @@ unsafe fn guess_bit(seed: *const u8, buffer: *mut u8) -> u8 {
     hit_counts
         .iter()
         .enumerate()
-        .max_by_key(|(i, &count)| {
-            //serial_println!("{}: {}", i, count);
-            count
-        })
+        .max_by_key(|(i, &count)| count)
         .unwrap()
         .0 as u8
 }
 
 pub fn cache() {
-    let sample: u8 = 0b10101010;
-    // 2ページ分のメモリを確保
-    // これヒープでやらないとダメなのかな？
-    let mut buffer = [0u8; PAGE_SIZE * 2];
-    //let mut result: u8 = 0;
+    static SAMPLE: &'static str = "Hinata OS";
+    let sample = SAMPLE.as_ptr();
+    let mut buffer = [0u8; PAGE_SIZE * 128];
 
-    let mut sum_no_cache_time = 0;
-    // キャッシュ差の実験
-    // キャッシュから払い出しているとき
-    for i in 0..256 {
+    for i in 0..SAMPLE.len() {
+        let seed = unsafe { sample.add(i) };
         unsafe {
-            flush(buffer.as_ptr());
-        }
-        let time = calc_access_time(
-            #[inline(always)]
-            || {
-                unsafe { buffer.as_ptr().read_volatile() };
-            },
-        );
-        if i > 10 {
-            sum_no_cache_time += time;
+            let result = guess_bit(seed, buffer.as_mut_ptr());
+            println!("{}", result);
         }
     }
-
-    println!("sum_no_cache_time: {}", sum_no_cache_time);
-    println!("average_no_cache_time: {}", sum_no_cache_time / 256);
-
-    let mut sum_cache_time = 0;
-    unsafe { buffer.as_ptr().read_volatile() };
-    // キャッシュが効いているとき
-    for i in 0..256 {
-        let time = calc_access_time(
-            #[inline(always)]
-            || {
-                unsafe { buffer.as_ptr().read_volatile() };
-            },
-        );
-        if i > 10 {
-            sum_cache_time += time;
-        }
-    }
-
-    println!("sum_cache_time: {}", sum_cache_time);
-    println!("average_cache_time: {}", sum_cache_time / 256);
 }

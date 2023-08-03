@@ -26,9 +26,9 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .unwrap();
 
     // todo: 内容ごとに表示する
-    memory_map.entries().for_each(|entry| {
+    /*memory_map.entries().for_each(|entry| {
         uefi_services::println!("entry: {:?}", entry);
-    });
+    });*/
 
     let mut file_protocol = match boot_services.get_image_file_system(_image) {
         Ok(file_protocol) => file_protocol,
@@ -72,7 +72,7 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     let file = match ElfBytes::<AnyEndian>::minimal_parse(&kernel_file) {
         Ok(file) => {
             for section in file.section_headers().unwrap() {
-                uefi_services::println!("section: {:?}", section);
+                //uefi_services::println!("section: {:?}", section);
             }
             file
         }
@@ -85,7 +85,7 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     let mut first_addr = u64::MAX;
     let mut last_addr = u64::MIN;
     for program_header in file.segments().unwrap() {
-        uefi_services::println!("program_header: {:?}", program_header);
+        //uefi_services::println!("program_header: {:?}", program_header);
         if program_header.p_type == elf::abi::PT_LOAD {
             let start_addr = program_header.p_vaddr;
             let end_addr = start_addr + program_header.p_memsz;

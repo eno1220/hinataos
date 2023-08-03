@@ -10,16 +10,13 @@ use kernel::cache::cache;
 use kernel::console::Console;
 use kernel::graphics::PixelInfo;
 use kernel::print::GLOBAL_POINTER;
-use kernel::serial::{com_init, IO_ADDR_COM1};
 use kernel::println;
+use kernel::serial::{com_init, IO_ADDR_COM1};
 
 #[no_mangle]
 pub extern "C" fn kernel_main(graphics_info: GraphicsInfo) -> ! {
     console_init(graphics_info);
     println!("Hello HinataOS{}", "!");
-    for i in 0..100 {
-        println!("Hello HinataOS{}", i);
-    }
     cache();
     loop {
         unsafe { asm!("hlt") };
