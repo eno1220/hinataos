@@ -6,7 +6,8 @@
 pub mod cache;
 pub mod console;
 pub mod font;
+pub mod gdt;
 pub mod graphics;
+pub mod interrupts;
 pub mod print;
 pub mod serial;
-pub mod interrupts;

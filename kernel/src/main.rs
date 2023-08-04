@@ -7,14 +7,16 @@ use common::types::GraphicsInfo;
 use core::arch::asm;
 use core::panic::PanicInfo;
 use kernel::console::Console;
+use kernel::gdt;
 use kernel::graphics::PixelInfo;
-use kernel::print::GLOBAL_POINTER;
-use kernel::{println, serial_println};
-use kernel::serial::{com_init, IO_ADDR_COM1};
 use kernel::interrupts;
+use kernel::print::GLOBAL_POINTER;
+use kernel::serial::{com_init, IO_ADDR_COM1};
+use kernel::{println, serial_println};
 
 #[no_mangle]
-pub extern "C" fn kernel_main(graphics_info: GraphicsInfo){
+pub extern "C" fn kernel_main(graphics_info: GraphicsInfo) -> ! {
+    gdt::init();
     interrupts::init_idt();
     console_init(graphics_info);
     println!("Hello HinataOS{}", "!");
