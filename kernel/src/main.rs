@@ -6,18 +6,18 @@
 use common::types::GraphicsInfo;
 use core::arch::asm;
 use core::panic::PanicInfo;
-use kernel::cache::cache;
 use kernel::console::Console;
 use kernel::graphics::PixelInfo;
 use kernel::print::GLOBAL_POINTER;
 use kernel::println;
 use kernel::serial::{com_init, IO_ADDR_COM1};
+use kernel::interrupts;
 
 #[no_mangle]
 pub extern "C" fn kernel_main(graphics_info: GraphicsInfo) -> ! {
+    interrupts::init_idt();
     console_init(graphics_info);
     println!("Hello HinataOS{}", "!");
-    cache();
     loop {
         unsafe { asm!("hlt") };
     }
