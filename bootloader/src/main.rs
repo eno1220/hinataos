@@ -6,6 +6,7 @@ extern crate alloc;
 use alloc::vec;
 use common::types::{GraphicsInfo, PixelFormat};
 use elf::{endian::AnyEndian, ElfBytes};
+use uefi::table::boot::MemoryMap;
 use uefi::{prelude::*, proto::console::gop::GraphicsOutput, table::boot::SearchType};
 
 #[entry]
@@ -19,16 +20,12 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     let map_size = system_table.boot_services().memory_map_size().map_size + 4096;
     uefi_services::println!("map_size: {}", map_size);
     let mut map_buffer = vec![0; map_size];
-    // todo: Error handling
     let memory_map = system_table
         .boot_services()
         .memory_map(&mut map_buffer)
         .unwrap();
 
-    // todo: 内容ごとに表示する
-    /*memory_map.entries().for_each(|entry| {
-        uefi_services::println!("entry: {:?}", entry);
-    });*/
+    pretty_print_memory_map(&memory_map);
 
     let mut file_protocol = match boot_services.get_image_file_system(_image) {
         Ok(file_protocol) => file_protocol,
@@ -71,9 +68,9 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     let file = match ElfBytes::<AnyEndian>::minimal_parse(&kernel_file) {
         Ok(file) => {
-            for section in file.section_headers().unwrap() {
-                //uefi_services::println!("section: {:?}", section);
-            }
+            /*for section in file.section_headers().unwrap() {
+                uefi_services::println!("section: {:?}", section);
+            }*/
             file
         }
         Err(error) => {
@@ -82,31 +79,13 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     };
     let entry_point = file.ehdr.e_entry;
 
-    let mut first_addr = u64::MAX;
-    let mut last_addr = u64::MIN;
-    for program_header in file.segments().unwrap() {
-        //uefi_services::println!("program_header: {:?}", program_header);
-        if program_header.p_type == elf::abi::PT_LOAD {
-            let start_addr = program_header.p_vaddr;
-            let end_addr = start_addr + program_header.p_memsz;
-            if start_addr < first_addr {
-                first_addr = start_addr;
-            }
-            if end_addr > last_addr {
-                last_addr = end_addr;
-            }
-        }
-    }
-
-    uefi_services::println!("first_addr: {:x}", first_addr);
-    uefi_services::println!("last_addr: {:x}", last_addr);
-
-    let pages = ((last_addr - first_addr) + 0xfff) / 0x1000;
+    let (load_first_addr, load_last_addr) = calc_load_size(&file);
+    let load_page_size = calc_size_in_pages_from_bytes((load_last_addr - load_first_addr) as usize);
 
     let physical_addr = match boot_services.allocate_pages(
-        uefi::table::boot::AllocateType::Address(first_addr),
+        uefi::table::boot::AllocateType::Address(load_first_addr),
         uefi::table::boot::MemoryType::LOADER_DATA,
-        pages as usize,
+        load_page_size,
     ) {
         Ok(physical_addr) => physical_addr,
         Err(error) => {
@@ -139,6 +118,24 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         }
     }
 
+    let graphics_info = get_graphics_info(boot_services);
+
+    drop(file_protocol);
+
+    let (_, _) = system_table.exit_boot_services();
+
+    unsafe {
+        // ABIが違う
+        let entry_point: extern "sysv64" fn(graphics_info: GraphicsInfo) -> ! =
+            core::mem::transmute(entry_point);
+        entry_point(graphics_info);
+    }
+
+    #[allow(unreachable_code)]
+    Status::SUCCESS
+}
+
+fn get_graphics_info(boot_services: &BootServices) -> GraphicsInfo {
     let gop_handle =
         match boot_services.locate_handle_buffer(SearchType::from_proto::<GraphicsOutput>()) {
             Ok(handle) => handle,
@@ -153,39 +150,53 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
             panic!("Failed to open_protocol_exclusive, {:?}", err);
         }
     };
-
-    uefi_services::println!("gop: {:?}", gop.current_mode_info());
-
-    let info = gop.current_mode_info();
-    let pixel_format = match info.pixel_format() {
+    let mode = gop.current_mode_info();
+    let pixel_format = match mode.pixel_format() {
         uefi::proto::console::gop::PixelFormat::Rgb => PixelFormat::Rgb,
         uefi::proto::console::gop::PixelFormat::Bgr => PixelFormat::Bgr,
         _ => panic!("Unsupported pixel format"),
     };
     let mut frame_buffer = gop.frame_buffer();
     let graphics_info: GraphicsInfo = GraphicsInfo::new(
-        info.resolution().0,
-        info.resolution().1,
-        info.stride(),
+        mode.resolution().0,
+        mode.resolution().1,
+        mode.stride(),
         frame_buffer.as_mut_ptr(),
         pixel_format,
     );
+    graphics_info
+}
 
-    uefi_services::println!("graphicsInfo: {:?}", graphics_info);
-
-    drop(gop_handle);
-    drop(gop);
-    drop(file_protocol);
-
-    let (_, _) = system_table.exit_boot_services();
-
-    unsafe {
-        // ABIが違う
-        let entry_point: extern "sysv64" fn(graphics_info: GraphicsInfo) -> ! =
-            core::mem::transmute(entry_point);
-        entry_point(graphics_info);
+fn calc_load_size(file: &ElfBytes<AnyEndian>) -> (u64, u64) {
+    let mut first_addr = u64::MAX;
+    let mut last_addr = u64::MIN;
+    for program_header in file.segments().unwrap() {
+        if program_header.p_type == elf::abi::PT_LOAD {
+            let start_addr = program_header.p_vaddr;
+            let end_addr = start_addr + program_header.p_memsz;
+            if start_addr < first_addr {
+                first_addr = start_addr;
+            }
+            if end_addr > last_addr {
+                last_addr = end_addr;
+            }
+        }
     }
+    (first_addr, last_addr)
+}
 
-    #[allow(unreachable_code)]
-    Status::SUCCESS
+fn calc_size_in_pages_from_bytes(bytes: usize) -> usize {
+    (bytes + 0xfff) / 0x1000
+}
+
+fn pretty_print_memory_map(memory_map: &MemoryMap) {
+    for descriptor in memory_map.entries() {
+        uefi_services::println!(
+            "addr: [{:#010x} - {:#010x}], len: {:#06} KiB, type: {:?}",
+            descriptor.phys_start,
+            descriptor.phys_start + descriptor.page_count * 4 * 1024 - 1,
+            descriptor.page_count * 4,
+            descriptor.ty
+        );
+    }
 }
