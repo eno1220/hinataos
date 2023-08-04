@@ -8,8 +8,8 @@ static mut GDT: GlobalDescriptorTable = GlobalDescriptorTable::new();
 pub fn init() {
     unsafe {
         // ref: mikan本 8.5-8.6
-        GDT.add_entry(Descriptor::user_code_segment());
-        GDT.add_entry(Descriptor::user_data_segment());
+        GDT.add_entry(Descriptor::kernel_code_segment());
+        GDT.add_entry(Descriptor::kernel_data_segment());
         GDT.load();
 
         DS::set_reg(SegmentSelector(0));
