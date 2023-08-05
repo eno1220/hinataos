@@ -126,9 +126,9 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     unsafe {
         // ABIが違う
-        let entry_point: extern "sysv64" fn(graphics_info: GraphicsInfo) -> ! =
-            core::mem::transmute(entry_point);
-        entry_point(graphics_info);
+        let entry_point: extern "sysv64" fn(graphics_info: &GraphicsInfo) =
+          core::mem::transmute(entry_point);
+        entry_point(&graphics_info);
     }
 
     #[allow(unreachable_code)]
