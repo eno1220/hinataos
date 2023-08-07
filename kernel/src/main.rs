@@ -12,6 +12,7 @@ use kernel::gdt;
 use kernel::graphics::PixelInfo;
 use kernel::interrupts;
 use kernel::paging::dump_page_table;
+use kernel::memory;
 use kernel::print::GLOBAL_POINTER;
 use kernel::serial::{com_init, IO_ADDR_COM1};
 use kernel::{println, serial_println};
@@ -39,6 +40,27 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     // cache();
     // なんか画面がバグるが！？
 
+    memory::init(memory_map);
+    //memory::dump_page_table();
+    let p = memory::alloc(20000) as *mut u8;
+    unsafe {
+        *p = 1;
+        println!("{}", *p);
+        println!("{:p}", p);
+    }
+    memory::free(p, 200);
+    let p = memory::alloc(200) as *mut u8;
+    unsafe {
+        *p = 100;
+        println!("{}", *p);
+        println!("{:p}", p);
+    }
+    let q = memory::alloc(200) as *mut u8;
+    unsafe {
+        *q = 200;
+        println!("{}", *q);
+        println!("{:p}", q);
+    }
     gdt::init();
     graphics_info.horizontal_resolution();
     unsafe {

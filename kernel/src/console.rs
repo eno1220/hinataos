@@ -1,6 +1,6 @@
 use crate::graphics::{transfer_rect, write_char, write_pixel, write_rect, PixelBuffer};
 
-pub const CONSOLE_WIDTH: usize = 50;
+pub const CONSOLE_WIDTH: usize = 70;
 pub const CONSOLE_HEIGHT: usize = 30;
 pub const ROW_HEIGHT: usize = 16;
 
