@@ -11,8 +11,8 @@ use kernel::console::Console;
 use kernel::gdt;
 use kernel::graphics::PixelInfo;
 use kernel::interrupts;
-use kernel::paging::dump_page_table;
 use kernel::memory;
+use kernel::paging::dump_page_table;
 use kernel::print::GLOBAL_POINTER;
 use kernel::serial::{com_init, IO_ADDR_COM1};
 use kernel::{println, serial_println};
@@ -41,7 +41,7 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     // なんか画面がバグるが！？
 
     memory::init(memory_map);
-    //memory::dump_page_table();
+    //memory::dump_memory_map();
     let p = memory::alloc(20000) as *mut u8;
     unsafe {
         *p = 1;
@@ -61,15 +61,19 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
         println!("{}", *q);
         println!("{:p}", q);
     }
+    memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);
+    memory::free(p, 200);
+    memory::free(q, 200);
+    memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);
     gdt::init();
     graphics_info.horizontal_resolution();
     unsafe {
         let time = x86::time::rdtsc();
-           cache(time as u8);
-           println!("{:08b}", time as u8);
-           let time = x86::time::rdtsc();
-           cache(time as u8);
-           println!("{:08b}", time as u8);
+        cache(time as u8);
+        println!("{:08b}", time as u8);
+        let time = x86::time::rdtsc();
+        cache(time as u8);
+        println!("{:08b}", time as u8);
     }
     //dump_page_table();
     loop {

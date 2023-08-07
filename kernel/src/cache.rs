@@ -2,9 +2,9 @@ use core::arch::asm;
 use core::arch::x86_64::_mm_clflush;
 use x86;
 
-use crate::{println,print};
 #[allow(unused_imports)]
 use crate::serial_println;
+use crate::{print, println};
 
 const PAGE_SIZE: usize = 4096;
 

@@ -13,17 +13,30 @@ pub fn init(memory_map: &MemoryMap) {
         let number_of_pages = memory_descriptor.page_count as usize;
         if !is_available(memory_descriptor.ty) {
             // ページとusizeを揃えて読みやすく
-            MEMORY_MANAGER.lock().mark_allocated(physical_start / FRAME_SIZE, number_of_pages);
+            MEMORY_MANAGER
+                .lock()
+                .mark_allocated(physical_start / FRAME_SIZE, number_of_pages);
             available_end_frame_id = physical_start / FRAME_SIZE + number_of_pages;
         }
     }
-    MEMORY_MANAGER.lock().set_memory_range(FrameID(0), FrameID(available_end_frame_id));
+    MEMORY_MANAGER
+        .lock()
+        .set_memory_range(FrameID(0), FrameID(available_end_frame_id));
 }
 
-pub fn dump_page_table() {
+pub fn dump_memory_map() {
     let memory_manager = MEMORY_MANAGER.lock();
     for i in 0..FRAME_SIZE {
-            println!("{:064b}",memory_manager.frame_bitmap[i]);
+        println!("{:064b}", memory_manager.frame_bitmap[i]);
+    }
+    println!("range_begin: {}", memory_manager.range_begin.0);
+    println!("range_end: {}", memory_manager.range_end.0);
+}
+
+pub fn dump_memory_map_by_range(start: usize, end: usize) {
+    let memory_manager = MEMORY_MANAGER.lock();
+    for i in start / BITS_PER_MAP_LINE..end / BITS_PER_MAP_LINE {
+        println!("{:064b}", memory_manager.frame_bitmap[i]);
     }
     println!("range_begin: {}", memory_manager.range_begin.0);
     println!("range_end: {}", memory_manager.range_end.0);
@@ -37,7 +50,9 @@ pub fn alloc(num_frames: usize) -> usize {
 // ptrじゃなくてframe_idを渡すようにした方が良い?
 // エラー処理も必要
 pub fn free(ptr: *mut u8, num_frames: usize) {
-   MEMORY_MANAGER.lock().free(ptr as usize / FRAME_SIZE, num_frames);
+    MEMORY_MANAGER
+        .lock()
+        .free(ptr as usize / FRAME_SIZE, num_frames);
 }
 
 pub struct FrameID(usize);
@@ -74,9 +89,9 @@ impl BitmapMemoryManager {
     }
 
     pub fn allocate(&mut self, num_frames: usize) -> FrameID {
-       let mut start_frame_id = self.range_begin.0;
-       loop{
-            let mut i:usize = 0;
+        let mut start_frame_id = self.range_begin.0;
+        loop {
+            let mut i: usize = 0;
             while i < num_frames {
                 if start_frame_id + i >= self.range_end.0 {
                     panic!("no enough memory");
@@ -92,11 +107,10 @@ impl BitmapMemoryManager {
                     self.set_bit(start_frame_id + j, true);
                 }
                 return FrameID::new(start_frame_id);
-            }
-            else{
+            } else {
                 start_frame_id += i + 1;
             }
-       }
+        }
     }
 
     pub fn free(&mut self, start_frame_id: usize, num_frames: usize) {
