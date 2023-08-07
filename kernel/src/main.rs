@@ -3,42 +3,41 @@
 #![no_std]
 #![no_main]
 
-use common::types::GraphicsInfo;
+use common::types::{GraphicsInfo, MemoryMap};
 use core::arch::asm;
 use core::panic::PanicInfo;
+use kernel::cache::cache;
 use kernel::console::Console;
 use kernel::gdt;
 use kernel::graphics::PixelInfo;
 use kernel::interrupts;
+use kernel::paging::dump_page_table;
 use kernel::print::GLOBAL_POINTER;
 use kernel::serial::{com_init, IO_ADDR_COM1};
 use kernel::{println, serial_println};
 
-#[repr(C, align(16))]
-struct KernelStack([u8; 1024 * 1024]);
-
-static mut KERNEL_STACK: KernelStack = KernelStack([0; 1024 * 1024]);
-
 #[no_mangle]
-pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo) {
-    let new_rsp_addr = unsafe { KERNEL_STACK.0.as_ptr() as u64 + 1024 * 1024 };
+pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &MemoryMap, new_rsp: u64) {
     unsafe {
         asm!(
             "mov rsp, {0}",
             "call kernel_main",
-            in(reg) new_rsp_addr,
+            in(reg) new_rsp,
             in("rdi") graphics_info,
+            in("rsi") memory_map,
             clobber_abi("sysv64"),
         );
     }
 }
 
 #[no_mangle]
-extern "C" fn kernel_main(graphics_info: &GraphicsInfo) -> ! {
-    gdt::init();
-    interrupts::init_idt();
+extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) -> ! {
+    //gdt::init();
+    //interrupts::init_idt();
     console_init(graphics_info);
     println!("Hello HinataOS{}", "!");
+    cache();
+    //dump_page_table();
     loop {
         unsafe { asm!("hlt") };
     }

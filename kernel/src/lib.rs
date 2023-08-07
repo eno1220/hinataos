@@ -9,5 +9,7 @@ pub mod font;
 pub mod gdt;
 pub mod graphics;
 pub mod interrupts;
+pub mod memory;
+pub mod paging;
 pub mod print;
 pub mod serial;

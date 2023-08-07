@@ -1,3 +1,5 @@
+use uefi::table::boot::{MemoryDescriptor, MemoryType};
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub enum PixelFormat {
@@ -50,5 +52,19 @@ impl GraphicsInfo {
 
     pub fn pixel_format(&self) -> PixelFormat {
         self.pixel_format
+    }
+}
+
+pub struct MemoryMap{
+    pub buffer: [MemoryDescriptor; 256],
+    pub length: usize,
+}
+
+pub fn is_available(memory_type: MemoryType) -> bool {
+    match memory_type{
+        MemoryType::BOOT_SERVICES_CODE => true,
+        MemoryType::BOOT_SERVICES_DATA => true,
+        MemoryType::CONVENTIONAL => true,
+        _ => false,
     }
 }

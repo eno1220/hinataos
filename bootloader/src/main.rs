@@ -4,9 +4,9 @@
 extern crate alloc;
 
 use alloc::vec;
-use common::types::{GraphicsInfo, PixelFormat};
+use common::types::{GraphicsInfo, PixelFormat, MemoryMap as CommonMemoryMap};
 use elf::{endian::AnyEndian, ElfBytes};
-use uefi::table::boot::MemoryMap;
+use uefi::table::boot::{MemoryMap, MemoryDescriptor};
 use uefi::{prelude::*, proto::console::gop::GraphicsOutput, table::boot::SearchType};
 
 #[entry]
@@ -120,15 +120,43 @@ fn main(_image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     let graphics_info = get_graphics_info(boot_services);
 
+    let kernel_stack = match boot_services.allocate_pages(
+        uefi::table::boot::AllocateType::AnyPages,
+        uefi::table::boot::MemoryType::LOADER_DATA,
+        calc_size_in_pages_from_bytes(1024 * 1024),
+    ) {
+        Ok(kernel_stack) => kernel_stack,
+        Err(error) => {
+            panic!("Failed to allocate pages: {:?}", error);
+        }
+    };
+
+    let kernel_stack = unsafe { core::slice::from_raw_parts_mut(kernel_stack as *mut u8, 1024 * 1024) };
+    let new_rsp = kernel_stack.as_ptr() as u64 + 1024 * 1024;
+
+    let mut memmap = CommonMemoryMap{
+        buffer: [MemoryDescriptor::default();256],
+        length: 0,
+    };
+    
+
     drop(file_protocol);
 
-    let (_, _) = system_table.exit_boot_services();
+    let (_, memory_map) = system_table.exit_boot_services();
+    for descriptor in memory_map.entries().into_iter() {
+        memmap.buffer[memmap.length] = *descriptor;
+        memmap.length += 1;
+    }
 
     unsafe {
         // ABIが違う
-        let entry_point: extern "sysv64" fn(graphics_info: &GraphicsInfo) =
+        let entry_point: extern "sysv64" fn(graphics_info: &GraphicsInfo, 
+            memmap: &CommonMemoryMap, 
+            new_rsp: u64) -> ! =
           core::mem::transmute(entry_point);
-        entry_point(&graphics_info);
+        entry_point(&graphics_info, 
+            &memmap,
+            new_rsp);
     }
 
     #[allow(unreachable_code)]
