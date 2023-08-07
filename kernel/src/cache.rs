@@ -34,7 +34,7 @@ unsafe fn probe(addr: *const u8) -> u64 {
 unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     flush_buffer(buffer);
 
-    buffer.add((seed as usize) * PAGE_SIZE).write_volatile(1);
+    buffer.add((seed as usize) * PAGE_SIZE).write_volatile(0);
 
     // 本当は 256 だけど、まあ文字範囲的に 80 で十分（256だと配列が大きすぎてクラッシュする）
     (0..2)

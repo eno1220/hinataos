@@ -6,6 +6,10 @@ kernel/target/x86_64-hinataos/debug/kernel.elf:
 bootloader/target/x86_64-unknown-uefi/debug/bootloader.efi:
 	cd bootloader && cargo build && cd .. \
 
+debug: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unknown-uefi/debug/bootloader.efi
+	cp kernel/target/x86_64-hinataos/debug/kernel.elf mnt/kernel.elf &&\
+	cp bootloader/target/x86_64-unknown-uefi/debug/bootloader.efi mnt/EFI/BOOT/BOOTX64.EFI
+
 run: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unknown-uefi/debug/bootloader.efi
 	cp kernel/target/x86_64-hinataos/debug/kernel.elf mnt/kernel.elf &&\
 	cp bootloader/target/x86_64-unknown-uefi/debug/bootloader.efi mnt/EFI/BOOT/BOOTX64.EFI &&\
