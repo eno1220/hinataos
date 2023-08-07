@@ -2,7 +2,7 @@ use core::arch::asm;
 use core::arch::x86_64::_mm_clflush;
 use x86;
 
-use crate::println;
+use crate::{println,print};
 #[allow(unused_imports)]
 use crate::serial_println;
 
@@ -55,7 +55,7 @@ fn calc_access_time<F: Fn()>(f: F) -> u64 {
 
 #[inline(never)]
 unsafe fn guess_bit(seed: u8, buffer: *mut u8) -> u8 {
-    const TRY_COUNT: usize = 100;
+    const TRY_COUNT: usize = 10000;
     let mut hit_counts = [0; 2];
 
     for _ in 0..TRY_COUNT {
@@ -66,22 +66,21 @@ unsafe fn guess_bit(seed: u8, buffer: *mut u8) -> u8 {
         .iter()
         .enumerate()
         .max_by_key(|(i, &count)| {
-            println!("{}: {}", i, count);
+            print!("{}: {:10} ", i, count);
             count
         })
         .unwrap()
         .0 as u8
 }
 
-pub fn cache() {
+pub fn cache(sample: u8) {
     /*static SAMPLE: &'static str = "Hinata OS";
     let sample = SAMPLE.as_ptr();*/
-    let sample = 0b10101010 as u8;
     let mut buffer = [0u8; PAGE_SIZE * 2];
 
     for i in 0..8 {
         unsafe {
-            let result = guess_bit(((sample >> i) & 1), buffer.as_mut_ptr());
+            let result = guess_bit((sample >> i) & 1, buffer.as_mut_ptr());
             println!("{}", result);
         }
     }

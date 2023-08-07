@@ -218,7 +218,7 @@ fn calc_size_in_pages_from_bytes(bytes: usize) -> usize {
 }
 
 fn pretty_print_memory_map(memory_map: &MemoryMap) {
-    for descriptor in memory_map.entries() {
+    /*for descriptor in memory_map.entries() {
         uefi_services::println!(
             "addr: [{:#010x} - {:#010x}], len: {:#06} KiB, type: {:?}",
             descriptor.phys_start,
@@ -226,5 +226,5 @@ fn pretty_print_memory_map(memory_map: &MemoryMap) {
             descriptor.page_count * 4,
             descriptor.ty
         );
-    }
+    }*/
 }

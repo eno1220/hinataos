@@ -1,7 +1,7 @@
 use crate::graphics::{transfer_rect, write_char, write_pixel, write_rect, PixelBuffer};
 
-pub const CONSOLE_WIDTH: usize = 100;
-pub const CONSOLE_HEIGHT: usize = 40;
+pub const CONSOLE_WIDTH: usize = 50;
+pub const CONSOLE_HEIGHT: usize = 30;
 pub const ROW_HEIGHT: usize = 16;
 
 pub struct Console<T: PixelBuffer> {

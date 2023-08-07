@@ -15,6 +15,7 @@ use kernel::paging::dump_page_table;
 use kernel::print::GLOBAL_POINTER;
 use kernel::serial::{com_init, IO_ADDR_COM1};
 use kernel::{println, serial_println};
+use x86;
 
 #[no_mangle]
 pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &MemoryMap, new_rsp: u64) {
@@ -32,11 +33,22 @@ pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &Memory
 
 #[no_mangle]
 extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) -> ! {
-    //gdt::init();
     //interrupts::init_idt();
     console_init(graphics_info);
     println!("Hello HinataOS{}", "!");
-    cache();
+    // cache();
+    // なんか画面がバグるが！？
+
+    gdt::init();
+    graphics_info.horizontal_resolution();
+    unsafe {
+        let time = x86::time::rdtsc();
+           cache(time as u8);
+           println!("{:08b}", time as u8);
+           let time = x86::time::rdtsc();
+           cache(time as u8);
+           println!("{:08b}", time as u8);
+    }
     //dump_page_table();
     loop {
         unsafe { asm!("hlt") };
