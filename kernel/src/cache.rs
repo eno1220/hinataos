@@ -34,12 +34,12 @@ unsafe fn probe(addr: *const u8) -> u64 {
 unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     flush_buffer(buffer);
 
-    buffer.add(((seed as usize) + 2) * PAGE_SIZE).write_volatile(1);
-    buffer.read_volatile();
+    buffer.add(((seed as usize) * 2) * PAGE_SIZE).write_volatile(1);
+    serial_println!("{:p}", buffer.add(((seed as usize) * 2) * PAGE_SIZE));
 
     (0..2)
         .min_by_key(|i| {
-            let time = probe(buffer.add(i + 2 * PAGE_SIZE));
+            let time = probe(buffer.add(i * 2 * PAGE_SIZE));
             serial_println!("{}: {}", i, time);
             time
         })
@@ -85,7 +85,7 @@ pub fn cache(sample: u8) {
     for i in 0..8 {
         unsafe {
             let result = guess_bit((sample >> i) & 1, buffer.as_mut_ptr());
-            println!("{}", result);
+            println!("{} {}", (sample >> i) & 1, result);
         }
     }
 }
