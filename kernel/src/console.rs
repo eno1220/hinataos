@@ -67,9 +67,8 @@ impl<T: PixelBuffer> Console<T> {
     pub fn print_char(&mut self, c: char) {
         if c == '\n' {
             self.new_line();
-        }else if c == '\r' {}
-        
-        else {
+        } else if c == '\r' {
+        } else {
             write_char(
                 &mut self.buffer,
                 self.cursor_x * 8,

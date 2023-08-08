@@ -38,7 +38,7 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     console_init(graphics_info);
     println!("Hello HinataOS{}", "!");
 
-    /*memory::init(memory_map);
+    memory::init(memory_map);
     //memory::dump_memory_map();
     let p = memory::alloc(20000) as *mut u8;
     unsafe {
@@ -59,10 +59,11 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
         println!("{}", *q);
         println!("{:p}", q);
     }
-    memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);
+    //memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);
+    memory::print_bitmap_info();
     memory::free(p, 200);
     memory::free(q, 200);
-    memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);*/
+    //memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);
     gdt::init();
     graphics_info.horizontal_resolution();
     unsafe {
@@ -76,7 +77,6 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
         cache(time as u8);
         println!("{:08b}", time as u8);
     }
-    //dump_page_table();
     loop {
         unsafe { asm!("hlt") };
     }

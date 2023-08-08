@@ -34,7 +34,9 @@ unsafe fn probe(addr: *const u8) -> u64 {
 unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     flush_buffer(buffer);
 
-    buffer.add(((seed as usize) * 2) * PAGE_SIZE).write_volatile(1);
+    buffer
+        .add(((seed as usize) * 2) * PAGE_SIZE)
+        .write_volatile(1);
     //serial_println!("{:p}", buffer.add(((seed as usize) * 2) * PAGE_SIZE));
 
     (0..2)

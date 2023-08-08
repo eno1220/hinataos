@@ -6,22 +6,59 @@ pub static MEMORY_MANAGER: Mutex<BitmapMemoryManager> = Mutex::new(BitmapMemoryM
 
 pub fn init(memory_map: &MemoryMap) {
     let buffer = memory_map.buffer;
-    let mut available_end_frame_id = 0;
+    let mut available_end = 0;
     for i in 0..memory_map.length {
         let memory_descriptor = buffer[i];
         let physical_start = memory_descriptor.phys_start as usize;
         let number_of_pages = memory_descriptor.page_count as usize;
-        if !is_available(memory_descriptor.ty) {
-            // ページとusizeを揃えて読みやすく
+        if available_end < physical_start {
+            MEMORY_MANAGER.lock().mark_allocated(
+                available_end / FRAME_SIZE,
+                (physical_start - available_end) / FRAME_SIZE,
+            );
+        }
+        if is_available(memory_descriptor.ty) {
+            available_end = physical_start + number_of_pages * FRAME_SIZE;
+        } else {
             MEMORY_MANAGER
                 .lock()
                 .mark_allocated(physical_start / FRAME_SIZE, number_of_pages);
-            available_end_frame_id = physical_start / FRAME_SIZE + number_of_pages;
         }
     }
     MEMORY_MANAGER
         .lock()
-        .set_memory_range(FrameID(0), FrameID(available_end_frame_id));
+        .set_memory_range(FrameID(0), FrameID(available_end / FRAME_SIZE));
+}
+
+pub fn print_bitmap_info() {
+    let mut flag = MEMORY_MANAGER.lock().get_bit(0);
+    let mut count = 0;
+    let mut available_count = 0;
+    let mut not_available_count = 0;
+    for i in 0..FRAME_COUNT {
+        if flag != MEMORY_MANAGER.lock().get_bit(i) {
+            if flag {
+                println!("not available: {}pages", count);
+                not_available_count += count;
+            } else {
+                println!("available: {}pages", count);
+                available_count += count;
+            }
+            flag = MEMORY_MANAGER.lock().get_bit(i);
+            count = 1;
+        } else {
+            count += 1;
+        }
+    }
+    if flag {
+        println!("not available: {}pages", count);
+        not_available_count += count;
+    } else {
+        println!("available: {}pages", count);
+        available_count += count;
+    }
+    println!("available: {}pages", available_count);
+    println!("not available: {}pages", not_available_count);
 }
 
 pub fn dump_memory_map() {
