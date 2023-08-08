@@ -15,7 +15,7 @@ use kernel::memory;
 use kernel::paging::dump_page_table;
 use kernel::print::GLOBAL_POINTER;
 use kernel::serial::{com_init, IO_ADDR_COM1};
-use kernel::{println, serial_println};
+use kernel::{println, serial_print};
 use x86;
 
 #[no_mangle]
@@ -40,7 +40,7 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     // cache();
     // なんか画面がバグるが！？
 
-    memory::init(memory_map);
+    /*memory::init(memory_map);
     //memory::dump_memory_map();
     let p = memory::alloc(20000) as *mut u8;
     unsafe {
@@ -64,8 +64,8 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);
     memory::free(p, 200);
     memory::free(q, 200);
-    memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);
-    gdt::init();
+    memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);*/
+    //gdt::init();
     graphics_info.horizontal_resolution();
     unsafe {
         let time = x86::time::rdtsc();

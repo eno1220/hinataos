@@ -42,8 +42,8 @@ macro_rules! print{
 
 #[macro_export]
 macro_rules! println{
-    () => ($crate::serial_print!("\n"));
-    ($($arg:tt)*) => ($crate::print!("{}\n",format_args!($($arg)*)));
+    () => ($crate::serial_print!("\r\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\r\n",format_args!($($arg)*)));
 }
 
 #[doc(hidden)]
@@ -60,6 +60,6 @@ macro_rules! serial_print{
 
 #[macro_export]
 macro_rules! serial_println{
-    () => ($crate::serial_print!("\n"));
-    ($($arg:tt)*) => ($crate::serial_print!("{}\n",format_args!($($arg)*)));
+    () => ($crate::serial_print!("\r\n"));
+    ($($arg:tt)*) => ($crate::serial_print!("{}\r\n",format_args!($($arg)*)));
 }

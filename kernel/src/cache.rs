@@ -15,7 +15,7 @@ unsafe fn flush(addr: *const u8) {
 
 #[inline(always)]
 unsafe fn flush_buffer(buffer: *const u8) {
-    for i in 0..2 {
+    for i in 0..4 {
         flush(buffer.add(i * PAGE_SIZE));
     }
 }
@@ -34,11 +34,15 @@ unsafe fn probe(addr: *const u8) -> u64 {
 unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     flush_buffer(buffer);
 
-    buffer.add((seed as usize) * PAGE_SIZE).write_volatile(0);
+    buffer.add(((seed as usize) + 2) * PAGE_SIZE).write_volatile(1);
+    buffer.read_volatile();
 
-    // 本当は 256 だけど、まあ文字範囲的に 80 で十分（256だと配列が大きすぎてクラッシュする）
     (0..2)
-        .min_by_key(|i| probe(buffer.add(i * PAGE_SIZE)))
+        .min_by_key(|i| {
+            let time = probe(buffer.add(i + 2 * PAGE_SIZE));
+            serial_println!("{}: {}", i, time);
+            time
+        })
         .unwrap() as u8
 }
 
@@ -55,7 +59,7 @@ fn calc_access_time<F: Fn()>(f: F) -> u64 {
 
 #[inline(never)]
 unsafe fn guess_bit(seed: u8, buffer: *mut u8) -> u8 {
-    const TRY_COUNT: usize = 10000;
+    const TRY_COUNT: usize = 100;
     let mut hit_counts = [0; 2];
 
     for _ in 0..TRY_COUNT {
@@ -76,7 +80,7 @@ unsafe fn guess_bit(seed: u8, buffer: *mut u8) -> u8 {
 pub fn cache(sample: u8) {
     /*static SAMPLE: &'static str = "Hinata OS";
     let sample = SAMPLE.as_ptr();*/
-    let mut buffer = [0u8; PAGE_SIZE * 2];
+    let mut buffer = [0u8; PAGE_SIZE * 4];
 
     for i in 0..8 {
         unsafe {
