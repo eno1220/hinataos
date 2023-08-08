@@ -34,11 +34,9 @@ pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &Memory
 
 #[no_mangle]
 extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) -> ! {
-    //interrupts::init_idt();
+    interrupts::init_idt();
     console_init(graphics_info);
     println!("Hello HinataOS{}", "!");
-    // cache();
-    // なんか画面がバグるが！？
 
     /*memory::init(memory_map);
     //memory::dump_memory_map();
@@ -65,9 +63,12 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     memory::free(p, 200);
     memory::free(q, 200);
     memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);*/
-    //gdt::init();
+    gdt::init();
     graphics_info.horizontal_resolution();
     unsafe {
+        let time = x86::time::rdtsc();
+        cache(time as u8);
+        println!("{:08b}", time as u8);
         let time = x86::time::rdtsc();
         cache(time as u8);
         println!("{:08b}", time as u8);
