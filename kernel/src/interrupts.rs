@@ -6,7 +6,7 @@ use x86_64::{
 
 static mut IDT: InterruptDescriptorTable = InterruptDescriptorTable::new();
 
-pub fn init_idt() {
+pub fn init() {
     interrupts::disable();
     unsafe {
         IDT.page_fault.set_handler_fn(page_fault_handler);

@@ -30,55 +30,6 @@ pub fn init(memory_map: &MemoryMap) {
         .set_memory_range(FrameID(0), FrameID(available_end / FRAME_SIZE));
 }
 
-pub fn print_bitmap_info() {
-    let mut flag = MEMORY_MANAGER.lock().get_bit(0);
-    let mut count = 0;
-    let mut available_count = 0;
-    let mut not_available_count = 0;
-    for i in 0..FRAME_COUNT {
-        if flag != MEMORY_MANAGER.lock().get_bit(i) {
-            if flag {
-                println!("not available: {}pages", count);
-                not_available_count += count;
-            } else {
-                println!("available: {}pages", count);
-                available_count += count;
-            }
-            flag = MEMORY_MANAGER.lock().get_bit(i);
-            count = 1;
-        } else {
-            count += 1;
-        }
-    }
-    if flag {
-        println!("not available: {}pages", count);
-        not_available_count += count;
-    } else {
-        println!("available: {}pages", count);
-        available_count += count;
-    }
-    println!("available: {}pages", available_count);
-    println!("not available: {}pages", not_available_count);
-}
-
-pub fn dump_memory_map() {
-    let memory_manager = MEMORY_MANAGER.lock();
-    for i in 0..FRAME_SIZE {
-        println!("{:064b}", memory_manager.frame_bitmap[i]);
-    }
-    println!("range_begin: {}", memory_manager.range_begin.0);
-    println!("range_end: {}", memory_manager.range_end.0);
-}
-
-pub fn dump_memory_map_by_range(start: usize, end: usize) {
-    let memory_manager = MEMORY_MANAGER.lock();
-    for i in start / BITS_PER_MAP_LINE..end / BITS_PER_MAP_LINE {
-        println!("{:064b}", memory_manager.frame_bitmap[i]);
-    }
-    println!("range_begin: {}", memory_manager.range_begin.0);
-    println!("range_end: {}", memory_manager.range_end.0);
-}
-
 pub fn alloc(num_frames: usize) -> usize {
     let frame_id = MEMORY_MANAGER.lock().allocate(num_frames);
     frame_id.0 * FRAME_SIZE

@@ -34,38 +34,11 @@ pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &Memory
 
 #[no_mangle]
 extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) -> ! {
-    interrupts::init_idt();
+    interrupts::init();
+    memory::init(memory_map);
+    gdt::init();
     console_init(graphics_info);
     println!("Hello HinataOS{}", "!");
-
-    memory::init(memory_map);
-    //memory::dump_memory_map();
-    let p = memory::alloc(20000) as *mut u8;
-    unsafe {
-        *p = 1;
-        println!("{}", *p);
-        println!("{:p}", p);
-    }
-    memory::free(p, 200);
-    let p = memory::alloc(200) as *mut u8;
-    unsafe {
-        *p = 100;
-        println!("{}", *p);
-        println!("{:p}", p);
-    }
-    let q = memory::alloc(200) as *mut u8;
-    unsafe {
-        *q = 200;
-        println!("{}", *q);
-        println!("{:p}", q);
-    }
-    //memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);
-    memory::print_bitmap_info();
-    memory::free(p, 200);
-    memory::free(q, 200);
-    //memory::dump_memory_map_by_range(q as usize / 0x1000, (q as usize) / 0x1000 + 300);
-    gdt::init();
-    graphics_info.horizontal_resolution();
     unsafe {
         let time = x86::time::rdtsc();
         cache(time as u8);
