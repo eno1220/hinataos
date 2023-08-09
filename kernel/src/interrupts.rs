@@ -12,6 +12,8 @@ pub fn init() {
         IDT.page_fault.set_handler_fn(page_fault_handler);
         IDT.breakpoint.set_handler_fn(breakpoint_handler);
         IDT.double_fault.set_handler_fn(double_fault_handler);
+        IDT.general_protection_fault
+            .set_handler_fn(general_protection_fault_handler);
         IDT.load();
     }
     interrupts::enable();
@@ -19,6 +21,16 @@ pub fn init() {
 
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     println!("[EXCEPTION] BREAKPOINT\nStack Frame: {:?}", stack_frame);
+}
+
+extern "x86-interrupt" fn general_protection_fault_handler(
+    stack_frame: InterruptStackFrame,
+    error_code: u64,
+) {
+    println!(
+        "[EXCEPTION] GENERAL PROTECTION FAULT\nError Code: {:?}\nStack Frame: {:?}",
+        error_code, stack_frame
+    );
 }
 
 extern "x86-interrupt" fn page_fault_handler(

@@ -18,6 +18,7 @@ run: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unk
 		-drive if=pflash,file=thirdparty/RELEASEX64_OVMF.fd,format=raw,readonly=on \
 		-drive format=raw,file=fat:rw:mnt \
 		-serial stdio \
+		-monitor telnet:0.0.0.0:1234,server,nowait \
 		-vga std \
 		-no-reboot \
 
@@ -30,6 +31,14 @@ run-gdb: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64
 		-serial stdio \
 		-no-reboot \
 		-s -S
+
+run-monitor: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unknown-uefi/debug/bootloader.efi
+	qemu-system-x86_64 \
+		-cpu Skylake-Client \
+		-drive if=pflash,file=thirdparty/RELEASEX64_OVMF_CODE.fd,format=raw,readonly=on \
+		-drive if=pflash,file=thirdparty/RELEASEX64_OVMF_VARS.fd,format=raw \
+		-drive format=raw,file=fat:rw:mnt \
+		-no-reboot \
 
 build: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unknown-uefi/debug/bootloader.efi
 

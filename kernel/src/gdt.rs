@@ -21,5 +21,14 @@ pub fn init() {
 
         CS::set_reg(SegmentSelector(1 << 3));
         SS::set_reg(SegmentSelector(2 << 3));
+        // 代わりに3,4にして
+        // ユーザ
+        // GDTに書き込んだ段階でCPUの状態を書き換えることはない
+        // レジスタに書き込んだ時にCPUがメモリを呼びにいく
+        // code segment
     }
+}
+
+pub fn get_user_segment() -> (u16,u16){
+        (SegmentSelector(3 << 3).0, SegmentSelector(4 << 3).0)
 }

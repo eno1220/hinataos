@@ -79,9 +79,13 @@ unsafe fn guess_bit(seed: u8, buffer: *mut u8) -> u8 {
         .0 as u8
 }
 
-pub fn cache(sample: u8) {
+#[no_mangle]
+pub extern "C" fn cache(sample: u8) {
     /*static SAMPLE: &'static str = "Hinata OS";
     let sample = SAMPLE.as_ptr();*/
+    // セグメントレジスタとかを表示できるようにする（デバッグ情報を出力）
+    // 権限が切り替わったらいいね
+    // 最終的には、秘密の値のあるアドレスを渡して（そのアドレスはユーザから読めないようにする）推測できればOK
     let mut buffer = [0u8; PAGE_SIZE * 4];
 
     for i in 0..8 {
