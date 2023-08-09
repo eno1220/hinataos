@@ -4,6 +4,7 @@
 #![no_main]
 
 use common::types::{GraphicsInfo, MemoryMap};
+use kernel::serial_println;
 use core::arch::asm;
 use core::panic::PanicInfo;
 use kernel::cache;
@@ -17,10 +18,8 @@ use kernel::print::GLOBAL_POINTER;
 use kernel::serial::{com_init, IO_ADDR_COM1};
 use kernel::{println, serial_print};
 use x86;
+use x86_64::registers::segmentation::*;
 use x86_64::VirtAddr;
-use x86_64::{
-    registers::segmentation::*,
-};
 #[no_mangle]
 pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &MemoryMap, new_rsp: u64) {
     unsafe {
@@ -45,28 +44,29 @@ pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &Memory
 // EFLAGSの中にあるIOPLを切り替えるとring3からでも出力できるようになる
 
 #[no_mangle]
-extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) -> ! {
+extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) {
+    console_init(graphics_info);
+    gdt::init();
     interrupts::init();
     memory::init(memory_map);
-    gdt::init();
-    console_init(graphics_info);
-    println!("Hello HinataOS{}", "!");
     paging::init();
-    let (user_cs,user_ss) = gdt::get_user_segment();
-    let app_stack = memory::alloc(0x1000);
-    let new_rsp = app_stack + 0x1000 * 4096;
-    unsafe{
-        let time = x86::time::rdtsc();
+    println!("Hello HinataOS{}", "!");
+
+    unsafe {
+        CS::set_reg(SegmentSelector(3<<3));
+        
+        // 落ちる原因
+        /*let time = x86::time::rdtsc();
         println!("{:08b}", time as u8);
-        asm!(
-            "mov rsp, {0}",
-            "call {1}",
-            "retfq",   
-            in(reg) new_rsp,         
+        cache::cache(time as u8);*/
+        /*asm!(
+            "call {0}",
             in(reg) cache::cache as extern "C" fn(u8) -> (),
             in("dil") time as u8,
-        );
-    }
+        );*/
+    };
+
+
 
     /*
     unsafe {
@@ -85,7 +85,8 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     }
 }
 
-fn halt_loop() -> ! {
+#[no_mangle]
+extern "C" fn halt_loop() -> ! {
     loop {
         unsafe { asm!("hlt") };
     }

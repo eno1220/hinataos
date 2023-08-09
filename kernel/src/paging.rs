@@ -21,7 +21,8 @@ fn phys_frame_from_page_table(page_table: &PageTable) -> PhysFrame {
 
 // カーネル空間は適当な範囲まで identity mapping する
 pub fn init() {
-    let user_flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE;
+    let user_flags =
+        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE;
     unsafe {
         PML4_TABLE[0].set_frame(phys_frame_from_page_table(&KERNEL_PDP_TABLE), user_flags);
 
@@ -29,10 +30,7 @@ pub fn init() {
             KERNEL_PDP_TABLE[i].set_frame(phys_frame_from_page_table(table), user_flags);
             for (j, entry) in KERNEL_PAGE_DIR[i].iter_mut().enumerate() {
                 let addr = i as u64 * Size1GiB::SIZE + j as u64 * Size2MiB::SIZE;
-                entry.set_addr(
-                    PhysAddr::new(addr),
-                    user_flags | PageTableFlags::HUGE_PAGE,
-                );
+                entry.set_addr(PhysAddr::new(addr), user_flags | PageTableFlags::HUGE_PAGE);
             }
         }
         use x86_64::registers::control::{Cr3, Cr3Flags};
