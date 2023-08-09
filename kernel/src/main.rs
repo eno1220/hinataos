@@ -5,7 +5,7 @@
 
 use common::types::{GraphicsInfo, MemoryMap};
 use kernel::serial_println;
-use core::arch::asm;
+use core::arch::{asm,global_asm};
 use core::panic::PanicInfo;
 use kernel::cache;
 use kernel::console::Console;
@@ -19,7 +19,7 @@ use kernel::serial::{com_init, IO_ADDR_COM1};
 use kernel::{println, serial_print};
 use x86;
 use x86_64::registers::segmentation::*;
-use x86_64::VirtAddr;
+use x86_64::PrivilegeLevel;
 #[no_mangle]
 pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &MemoryMap, new_rsp: u64) {
     unsafe {
@@ -43,6 +43,7 @@ pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &Memory
 // code segmentを書き換えると、ユーザからカーネルに戻れなくなってくる
 // EFLAGSの中にあるIOPLを切り替えるとring3からでも出力できるようになる
 
+
 #[no_mangle]
 extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) {
     console_init(graphics_info);
@@ -52,11 +53,34 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     paging::init();
     println!("Hello HinataOS{}", "!");
 
+
+    let app_stack = memory::alloc(0x1000);
+    let new_rsp = app_stack + 0x1000 * 4096 - 64;
+    unsafe{
+        // rspの次のところに戻り先のアドレスを書き込む
+        let rsp = new_rsp as *mut u64;
+        rsp.add(64).write(core::mem::transmute::<_, u64>(halt_loop as extern "C" fn() -> !));
+    }
+    let (user_code_segment, user_data_segment) = gdt::get_user_segment();
+    println!("user_code_segment: {:x}", user_code_segment);
+    println!("user_data_segment: {:x}", user_data_segment);
+    //gdt::set_user_segment();
     unsafe {
-        CS::set_reg(SegmentSelector(3<<3));
+    
+        /*let new_ss = SegmentSelector(4<<3);
+        SS::set_reg(new_ss);
+        let new_ss = SegmentSelector(4<<3 | 3);
+        DS::set_reg(new_ss);
+        ES::set_reg(new_ss);
+        FS::set_reg(new_ss);
+        GS::set_reg(new_ss);
+
+        let new_cs = SegmentSelector(3<<3 | 3);
+
+        CS::set_reg(new_cs);
         
         // 落ちる原因
-        /*let time = x86::time::rdtsc();
+        let time = x86::time::rdtsc();
         println!("{:08b}", time as u8);
         cache::cache(time as u8);*/
         /*asm!(
@@ -64,6 +88,21 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
             in(reg) cache::cache as extern "C" fn(u8) -> (),
             in("dil") time as u8,
         );*/
+        // p218 vol3 sdm error codeはpopしておく
+        // RFLAGSは今のやつでOK(IOPLは3にしておく→ユーザモードでもIO空間にアクセスできるようになる)
+        // iretじゃないといけない（どうじにssとcsを同時に切り替える、stackにつむ）
+        let time = x86::time::rdtsc();
+        asm!(
+            "push {0}",
+            "push {1}",
+            "push {2}",
+            "push {3}",
+            "iretq",
+            in(reg) user_data_segment as u64,
+            in(reg) new_rsp,
+            in(reg) user_code_segment as u64,
+            in(reg) halt_loop as extern "C" fn() -> !,
+        );
     };
 
 

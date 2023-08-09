@@ -46,5 +46,17 @@ pub fn init() {
 }
 
 pub fn get_user_segment() -> (u16, u16) {
-    (SegmentSelector(3 << 3).0, SegmentSelector(4 << 3).0)
+    let mut user_code_segment = SegmentSelector(3 << 3);
+    user_code_segment.set_rpl(x86_64::PrivilegeLevel::Ring3);
+    let mut user_data_segment = SegmentSelector(4 << 3);
+    user_data_segment.set_rpl(x86_64::PrivilegeLevel::Ring3);
+    (user_code_segment.0, user_data_segment.0)
+}
+
+
+pub fn set_user_segment() {
+    unsafe {
+        CS::set_reg(SegmentSelector(3 << 3));
+        SS::set_reg(SegmentSelector(4 << 3));
+    }
 }

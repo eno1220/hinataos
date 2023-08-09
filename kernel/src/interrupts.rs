@@ -15,9 +15,9 @@ pub fn init() {
         
         IDT.page_fault.set_handler_fn(page_fault_handler);
         IDT.breakpoint.set_handler_fn(breakpoint_handler);
-        IDT.double_fault.set_handler_fn(double_fault_handler).set_stack_index(0);
+        IDT.double_fault.set_handler_fn(double_fault_handler);
         IDT.general_protection_fault
-            .set_handler_fn(general_protection_fault_handler);
+            .set_handler_fn(general_protection_fault_handler).set_stack_index(0);
         IDT.load();
     }
     interrupts::enable();
