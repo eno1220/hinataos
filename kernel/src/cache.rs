@@ -4,7 +4,7 @@ use x86;
 
 use crate::serial_print;
 #[allow(unused_imports)]
-use crate::serial_println;
+use crate::{serial_println,println};
 
 const PAGE_SIZE: usize = 4096;
 
@@ -34,15 +34,16 @@ unsafe fn probe(addr: *const u8) -> u64 {
 unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     flush_buffer(buffer);
 
+    // 1足すとうまく動く（キャッシュが動くから?）
     buffer
-        .add(((seed as usize) * 2) * PAGE_SIZE)
+        .add(((seed as usize) + 1) * PAGE_SIZE)
         .write_volatile(1);
     //serial_println!("{:p}", buffer.add(((seed as usize) * 2) * PAGE_SIZE));
 
     (0..2)
         .min_by_key(|i| {
-            let time = probe(buffer.add(i * 2 * PAGE_SIZE));
-            //serial_println!("{}: {}", i, time);
+            let time = probe(buffer.add(i + 1 * PAGE_SIZE));
+            serial_println!("{}: {}", i, time);
             time
         })
         .unwrap() as u8
@@ -91,7 +92,7 @@ pub extern "C" fn cache(sample: u8) {
     for i in 0..8 {
         unsafe {
             let result = guess_bit((sample >> i) & 1, buffer.as_mut_ptr());
-            serial_println!("{} {}", (sample >> i) & 1, result);
+            println!("{} {}", (sample >> i) & 1, result);
         }
     }
     loop{

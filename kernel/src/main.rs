@@ -59,9 +59,9 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     let app_stack = memory::alloc(0x1000);
     let new_rsp = app_stack + 0x1000 * 4096 - 64;
     let (user_code_segment, user_data_segment) = gdt::get_user_segment();
-    println!("user_code_segment: {:x}", user_code_segment);
-    println!("user_data_segment: {:x}", user_data_segment);
-    println!("new_rsp: {:x}", new_rsp);
+    //println!("user_code_segment: {:x}", user_code_segment);
+    //println!("user_data_segment: {:x}", user_data_segment);
+    //println!("new_rsp: {:x}", new_rsp);
     //gdt::set_user_segment();
     unsafe {
     
