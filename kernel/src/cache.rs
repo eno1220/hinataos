@@ -4,7 +4,7 @@ use x86;
 
 use crate::serial_print;
 #[allow(unused_imports)]
-use crate::{serial_println,println};
+use crate::{println, serial_println};
 
 const PAGE_SIZE: usize = 4096;
 
@@ -31,15 +31,35 @@ unsafe fn probe(addr: *const u8) -> u64 {
 }
 
 #[inline(always)]
+//unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
 unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     flush_buffer(buffer);
 
+    /*
+    ユーザ空間
     // 1足すとうまく動く（キャッシュが動くから?）
     buffer
         .add(((seed as usize) + 1) * PAGE_SIZE)
         .write_volatile(1);
     //serial_println!("{:p}", buffer.add(((seed as usize) * 2) * PAGE_SIZE));
+    */
 
+    // 例外起こしてすぐ戻るをやってもいい気がした→でも面白くなくない?（一応本質部分はできていますが...）
+    // 飛び先のアドレスで予測されている（CPUは）
+    // それを参考にしてトレーニングを施してみる（アドレスの一部を使っている）
+
+    let p = 0xfc0000000 as *mut u8;
+    //buffer.add(1).write_volatile(1);
+    buffer.add(
+        (*p as usize) >> seed & 1  + 1* PAGE_SIZE
+    ).write_volatile(1);
+    // カーネルへのアクセス
+
+    /*loop{
+        asm!("nop");
+    }*/
+
+    // ここに飛びたい
     (0..2)
         .min_by_key(|i| {
             let time = probe(buffer.add(i + 1 * PAGE_SIZE));
@@ -91,11 +111,11 @@ pub extern "C" fn cache(sample: u8) {
 
     for i in 0..8 {
         unsafe {
-            let result = guess_bit((sample >> i) & 1, buffer.as_mut_ptr());
-            println!("{} {}", (sample >> i) & 1, result);
+            //let result = guess_bit((sample >> i) & 1, buffer.as_mut_ptr());
+            //println!("{} {}", (sample >> i) & 1, result);
+            let result = guess_bit(i, buffer.as_mut_ptr());
+            println!("{} {}", i, result);
         }
     }
-    loop{
-
-    }
+    loop {}
 }

@@ -9,6 +9,7 @@ const EMPTY_ENTRY: PageTable = PageTable::new();
 static mut PML4_TABLE: PageTable = PageTable::new();
 static mut KERNEL_PDP_TABLE: PageTable = PageTable::new();
 static mut KERNEL_PAGE_DIR: [PageTable; 64] = [EMPTY_ENTRY; 64];
+static mut KERNEL_PAGE_TABLES: [PageTable; 512] = [EMPTY_ENTRY; 512];
 
 fn phys_frame_from_page_table(page_table: &PageTable) -> PhysFrame {
     PhysFrame::from_start_address(PhysAddr::new(page_table as *const _ as u64)).unwrap()
@@ -23,6 +24,7 @@ fn phys_frame_from_page_table(page_table: &PageTable) -> PhysFrame {
 pub fn init() {
     let user_flags =
         PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE;
+    let kernel_flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
     unsafe {
         PML4_TABLE[0].set_frame(phys_frame_from_page_table(&KERNEL_PDP_TABLE), user_flags);
 
@@ -30,7 +32,17 @@ pub fn init() {
             KERNEL_PDP_TABLE[i].set_frame(phys_frame_from_page_table(table), user_flags);
             for (j, entry) in KERNEL_PAGE_DIR[i].iter_mut().enumerate() {
                 let addr = i as u64 * Size1GiB::SIZE + j as u64 * Size2MiB::SIZE;
-                entry.set_addr(PhysAddr::new(addr), user_flags | PageTableFlags::HUGE_PAGE);
+                if i == 63 {
+                    // 64番目のページディレクトリはユーザ空間に割り当てる
+                    entry.set_addr(
+                        PhysAddr::new(addr),
+                        kernel_flags | PageTableFlags::HUGE_PAGE,
+                    );
+                    //println!("addr: {:x}", addr);
+                } else {
+                    entry.set_addr(PhysAddr::new(addr), user_flags | PageTableFlags::HUGE_PAGE);
+                }
+                //entry.set_addr(PhysAddr::new(addr), user_flags | PageTableFlags::HUGE_PAGE);
             }
         }
         use x86_64::registers::control::{Cr3, Cr3Flags};

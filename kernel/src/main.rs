@@ -4,9 +4,7 @@
 #![no_main]
 
 use common::types::{GraphicsInfo, MemoryMap};
-use kernel::serial_println;
-use x86::vmx::vmcs::guest::CR4;
-use core::arch::{asm,global_asm};
+use core::arch::{asm, global_asm};
 use core::panic::PanicInfo;
 use kernel::cache;
 use kernel::console::Console;
@@ -17,10 +15,12 @@ use kernel::memory;
 use kernel::paging;
 use kernel::print::GLOBAL_POINTER;
 use kernel::serial::{com_init, IO_ADDR_COM1};
+use kernel::serial_println;
 use kernel::{println, serial_print};
 use x86;
-use x86_64::registers::segmentation::*;
+use x86::vmx::vmcs::guest::CR4;
 use x86_64::registers::control::{Cr4, Cr4Flags};
+use x86_64::registers::segmentation::*;
 
 #[no_mangle]
 pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &MemoryMap, new_rsp: u64) {
@@ -45,7 +45,6 @@ pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &Memory
 // code segmentを書き換えると、ユーザからカーネルに戻れなくなってくる
 // EFLAGSの中にあるIOPLを切り替えるとring3からでも出力できるようになる
 
-
 #[no_mangle]
 extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) {
     console_init(graphics_info);
@@ -55,6 +54,8 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     paging::init();
     println!("Hello HinataOS{}", "!");
 
+    let p = 0xfc0000000 as *mut u8;
+    unsafe { *p = 0b10101010 };
 
     let app_stack = memory::alloc(0x1000);
     let new_rsp = app_stack + 0x1000 * 4096 - 64;
@@ -64,7 +65,6 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     //println!("new_rsp: {:x}", new_rsp);
     //gdt::set_user_segment();
     unsafe {
-    
         /*let new_ss = SegmentSelector(4<<3);
         SS::set_reg(new_ss);
         let new_ss = SegmentSelector(4<<3 | 3);
@@ -76,7 +76,7 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
         let new_cs = SegmentSelector(3<<3 | 3);
 
         CS::set_reg(new_cs);
-        
+
         // 落ちる原因
         let time = x86::time::rdtsc();
         println!("{:08b}", time as u8);
@@ -102,11 +102,14 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
             in(reg) halt_loop as extern "C" fn() -> !,
         );*/
         println!("{:?}", Cr4::read());
-        Cr4::update(|cr4| {/*cr4.insert(Cr4Flags::TIMESTAMP_DISABLE);*/ cr4.insert(Cr4Flags::PERFORMANCE_MONITOR_COUNTER);});
+        Cr4::update(|cr4| {
+            /*cr4.insert(Cr4Flags::TIMESTAMP_DISABLE);*/
+            cr4.insert(Cr4Flags::PERFORMANCE_MONITOR_COUNTER);
+        });
         asm!(
             "push {0}",
             "push {1}",
-            "mov eax, 0x3016", //todo: シリアル出力時 
+            "mov eax, 0x3016", //todo: シリアル出力時
             "push rax",
             "push {2}",
             "push {3}",
@@ -118,8 +121,6 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
             in("dil") time as u8,
         )
     };
-
-
 
     /*
     unsafe {
@@ -140,8 +141,7 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
 
 #[no_mangle]
 extern "C" fn halt_loop() -> ! {
-    loop {
-    }
+    loop {}
 }
 
 #[panic_handler]
