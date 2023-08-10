@@ -32,7 +32,7 @@ pub fn init() {
             KERNEL_PDP_TABLE[i].set_frame(phys_frame_from_page_table(table), user_flags);
             for (j, entry) in KERNEL_PAGE_DIR[i].iter_mut().enumerate() {
                 let addr = i as u64 * Size1GiB::SIZE + j as u64 * Size2MiB::SIZE;
-                if i == 63 {
+                if i == 2 {
                     // 64番目のページディレクトリはユーザ空間に割り当てる
                     entry.set_addr(
                         PhysAddr::new(addr),

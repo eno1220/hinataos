@@ -47,12 +47,12 @@ extern "x86-interrupt" fn page_fault_handler(
 ) {
     use x86_64::registers::control::Cr2;
 
-    println!(
+    /*println!(
         "[EXCEPTION] PAGE FAULT\nAccessed Address: {:?}\nError Code: {:?}\nStack Frame: {:?}",
         Cr2::read(),
         error_code,
         stack_frame
-    );
+    );*/
 
     let rip = &mut unsafe{stack_frame.as_mut()}.extract_inner().instruction_pointer;
 

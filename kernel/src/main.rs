@@ -6,7 +6,7 @@
 use common::types::{GraphicsInfo, MemoryMap};
 use core::arch::{asm, global_asm};
 use core::panic::PanicInfo;
-use kernel::cache;
+use kernel::{cache, print};
 use kernel::console::Console;
 use kernel::gdt;
 use kernel::graphics::PixelInfo;
@@ -54,8 +54,13 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     paging::init();
     println!("Hello HinataOS{}", "!");
 
-    let p = 0xfc0000000 as *mut u8;
-    unsafe { *p = 0b10101010 };
+    // 2GBの先頭pointer
+    let p: *mut u8 = 0x80000000 as *mut u8;
+    unsafe {
+        *p = 0x10;
+    }
+    println!("p: {:x}", p as u64);
+    println!("*p: {:x}", unsafe { *p });
 
     let app_stack = memory::alloc(0x1000);
     let new_rsp = app_stack + 0x1000 * 4096 - 64;
@@ -101,7 +106,6 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
             in(reg) user_code_segment as u64,
             in(reg) halt_loop as extern "C" fn() -> !,
         );*/
-        println!("{:?}", Cr4::read());
         Cr4::update(|cr4| {
             /*cr4.insert(Cr4Flags::TIMESTAMP_DISABLE);*/
             cr4.insert(Cr4Flags::PERFORMANCE_MONITOR_COUNTER);

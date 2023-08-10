@@ -20,6 +20,7 @@ run: kernel/target/x86_64-hinataos/debug/kernel.elf bootloader/target/x86_64-unk
 		-monitor telnet:0.0.0.0:1234,server,nowait \
 		-vga std \
 		-d int \
+		-m 4G \
 		-serial stdio \
 		-no-reboot \
 

