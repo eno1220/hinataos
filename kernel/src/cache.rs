@@ -2,9 +2,9 @@ use core::arch::asm;
 use core::arch::x86_64::_mm_clflush;
 use x86;
 
+use crate::serial_print;
 #[allow(unused_imports)]
 use crate::serial_println;
-use crate::{print, println};
 
 const PAGE_SIZE: usize = 4096;
 
@@ -72,7 +72,7 @@ unsafe fn guess_bit(seed: u8, buffer: *mut u8) -> u8 {
         .iter()
         .enumerate()
         .max_by_key(|(i, &count)| {
-            print!("{}: {:10} ", i, count);
+            serial_print!("{}: {:10} ", i, count);
             count
         })
         .unwrap()
@@ -91,7 +91,10 @@ pub extern "C" fn cache(sample: u8) {
     for i in 0..8 {
         unsafe {
             let result = guess_bit((sample >> i) & 1, buffer.as_mut_ptr());
-            println!("{} {}", (sample >> i) & 1, result);
+            serial_println!("{} {}", (sample >> i) & 1, result);
         }
+    }
+    loop{
+
     }
 }

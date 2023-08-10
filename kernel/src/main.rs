@@ -5,6 +5,7 @@
 
 use common::types::{GraphicsInfo, MemoryMap};
 use kernel::serial_println;
+use x86::vmx::vmcs::guest::CR4;
 use core::arch::{asm,global_asm};
 use core::panic::PanicInfo;
 use kernel::cache;
@@ -19,7 +20,8 @@ use kernel::serial::{com_init, IO_ADDR_COM1};
 use kernel::{println, serial_print};
 use x86;
 use x86_64::registers::segmentation::*;
-use x86_64::PrivilegeLevel;
+use x86_64::registers::control::{Cr4, Cr4Flags};
+
 #[no_mangle]
 pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &MemoryMap, new_rsp: u64) {
     unsafe {
@@ -56,14 +58,10 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
 
     let app_stack = memory::alloc(0x1000);
     let new_rsp = app_stack + 0x1000 * 4096 - 64;
-    unsafe{
-        // rspの次のところに戻り先のアドレスを書き込む
-        let rsp = new_rsp as *mut u64;
-        rsp.add(64).write(core::mem::transmute::<_, u64>(halt_loop as extern "C" fn() -> !));
-    }
     let (user_code_segment, user_data_segment) = gdt::get_user_segment();
     println!("user_code_segment: {:x}", user_code_segment);
     println!("user_data_segment: {:x}", user_data_segment);
+    println!("new_rsp: {:x}", new_rsp);
     //gdt::set_user_segment();
     unsafe {
     
@@ -92,7 +90,7 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
         // RFLAGSは今のやつでOK(IOPLは3にしておく→ユーザモードでもIO空間にアクセスできるようになる)
         // iretじゃないといけない（どうじにssとcsを同時に切り替える、stackにつむ）
         let time = x86::time::rdtsc();
-        asm!(
+        /*asm!(
             "push {0}",
             "push {1}",
             "push {2}",
@@ -102,7 +100,23 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
             in(reg) new_rsp,
             in(reg) user_code_segment as u64,
             in(reg) halt_loop as extern "C" fn() -> !,
-        );
+        );*/
+        println!("{:?}", Cr4::read());
+        Cr4::update(|cr4| {/*cr4.insert(Cr4Flags::TIMESTAMP_DISABLE);*/ cr4.insert(Cr4Flags::PERFORMANCE_MONITOR_COUNTER);});
+        asm!(
+            "push {0}",
+            "push {1}",
+            "mov eax, 0x3016", //todo: シリアル出力時 
+            "push rax",
+            "push {2}",
+            "push {3}",
+            "iretq",
+            in(reg) user_data_segment as u64,
+            in(reg) new_rsp,
+            in(reg) user_code_segment as u64,
+            in(reg) cache::cache as extern "C" fn(u8) -> (),
+            in("dil") time as u8,
+        )
     };
 
 
@@ -127,7 +141,6 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
 #[no_mangle]
 extern "C" fn halt_loop() -> ! {
     loop {
-        unsafe { asm!("hlt") };
     }
 }
 
