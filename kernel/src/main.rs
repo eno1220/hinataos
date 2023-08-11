@@ -57,10 +57,8 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     // 2GBの先頭pointer
     let p: *mut u8 = 0x80000000 as *mut u8;
     unsafe {
-        *p = 0x10;
+        *p = 10;
     }
-    println!("p: {:x}", p as u64);
-    println!("*p: {:x}", unsafe { *p });
 
     let app_stack = memory::alloc(0x1000);
     let new_rsp = app_stack + 0x1000 * 4096 - 64;
