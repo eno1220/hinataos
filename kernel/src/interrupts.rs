@@ -2,7 +2,9 @@ use crate::{println, serial_println};
 use core::arch::asm;
 use x86_64::{
     instructions::interrupts,
-    structures::idt::{InterruptDescriptorTable, InterruptStackFrame, InterruptStackFrameValue,PageFaultErrorCode},
+    structures::idt::{
+        InterruptDescriptorTable, InterruptStackFrame, InterruptStackFrameValue, PageFaultErrorCode,
+    },
     structures::tss::TaskStateSegment,
     VirtAddr,
 };
@@ -54,16 +56,17 @@ extern "x86-interrupt" fn page_fault_handler(
         stack_frame
     );*/
 
-    let rip = &mut unsafe{stack_frame.as_mut()}.extract_inner().instruction_pointer;
+    let rip = &mut unsafe { stack_frame.as_mut() }
+        .extract_inner()
+        .instruction_pointer;
 
-    *rip = VirtAddr::new(rip.as_u64() + 3); 
+    *rip = VirtAddr::new(rip.as_u64() + 3);
 
     //let stack_mut = unsafe{stack_frame.as_mut()};
 
     // stackframeのinstruction pointerを書き換える
     // rip+0xc6??してiretする
     // 例外を起こす次の命令にもどるようにする（RIP分ずらしてiretする）
-
 
     // ラベルを書いておいて（例外の次）ラベルの値を例外を起こす前に変数（レジスタ）に代入しておく、レジスタを見てRIPを書き換えて、そこに飛ばす
 }

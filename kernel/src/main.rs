@@ -6,7 +6,6 @@
 use common::types::{GraphicsInfo, MemoryMap};
 use core::arch::{asm, global_asm};
 use core::panic::PanicInfo;
-use kernel::{cache, print};
 use kernel::console::Console;
 use kernel::gdt;
 use kernel::graphics::PixelInfo;
@@ -16,6 +15,7 @@ use kernel::paging;
 use kernel::print::GLOBAL_POINTER;
 use kernel::serial::{com_init, IO_ADDR_COM1};
 use kernel::serial_println;
+use kernel::{cache, print};
 use kernel::{println, serial_print};
 use x86;
 use x86::vmx::vmcs::guest::CR4;

@@ -4,7 +4,7 @@ use x86;
 
 use crate::serial_print;
 #[allow(unused_imports)]
-use crate::{println,print, serial_println};
+use crate::{print, println, serial_println};
 
 const PAGE_SIZE: usize = 4096;
 
@@ -50,9 +50,7 @@ unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
 
     let p = 0x80000000 as *mut u8;
     //buffer.add(1).write_volatile(1);
-    buffer.add(
-        (*p as usize + 1) * PAGE_SIZE
-    ).write_volatile(1);
+    buffer.add((*p as usize + 1) * PAGE_SIZE).write_volatile(1);
     // カーネルへのアクセス
 
     /*loop{
@@ -62,7 +60,7 @@ unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     // ここに飛びたい
     (0..64)
         .min_by_key(|i| {
-            let time = probe(buffer.add((i+1) * PAGE_SIZE));
+            let time = probe(buffer.add((i + 1) * PAGE_SIZE));
             //serial_println!("{}: {}", i, time);
             time
         })
