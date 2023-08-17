@@ -12,6 +12,7 @@ pub struct Console<T: PixelBuffer> {
     cursor_x: usize,
     cursor_y: usize,
     text_buffer: [[char; CONSOLE_WIDTH]; CONSOLE_HEIGHT],
+    log_level: log::LevelFilter,
 }
 
 // 適当実装なので直す
@@ -27,6 +28,7 @@ impl<T: PixelBuffer> Console<T> {
             cursor_x: 0,
             cursor_y: 0,
             text_buffer: unsafe { core::mem::transmute(CONSOLE_BUFFER) },
+            log_level: log::LevelFilter::Info,
         }
     }
     fn new_line(&mut self) {

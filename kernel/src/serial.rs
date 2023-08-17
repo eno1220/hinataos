@@ -1,9 +1,11 @@
 use x86_64::structures::port::{PortRead, PortWrite};
 
+use crate::serial_println;
+
 pub const IO_ADDR_COM1: u16 = 0x3F8;
 pub const IO_ADDR_COM2: u16 = 0x2F8;
 
-pub fn com_init(io_addr: u16) {
+pub fn serial_init(io_addr: u16) {
     unsafe {
         // Disable all interrupts
         u8::write_to_port(io_addr + 1, 0x00);

@@ -50,12 +50,18 @@ unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
 
     let p = 0x80000000 as *mut u8;
     //buffer.add(1).write_volatile(1);
-    buffer.add((*p as usize + 1) * PAGE_SIZE).write_volatile(1);
+    //buffer.add((*p as usize + 1) * PAGE_SIZE).write_volatile(1);
     // カーネルへのアクセス
+
+    // meltdown
+    // pのアドレスの指す先の値をロードして
+    // 先ほどロードした値の要素番目のアドレスに1を書き込
 
     /*loop{
         asm!("nop");
     }*/
+
+    //meltdown(p, buffer);
 
     // ここに飛びたい
     (0..64)
@@ -119,3 +125,8 @@ pub extern "C" fn cache(sample: u8) {
     }*/
     loop {}
 }
+
+// spector→色々なコードパターンがある
+// どれくらい実際にカーネルないにある
+// それを探してみる
+// 別のtype コンヒュージョン→どれくらいあるかわからない

@@ -12,6 +12,7 @@ spin = { version ="0.9.8" }
 volatile = "0.5.1"
 x86 = "0.52.0"
 rtm = "1.0.0"
+log = "0.4.20"
 
 [[bin]]
 name = "kernel"
