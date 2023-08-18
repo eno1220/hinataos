@@ -1,7 +1,5 @@
 use x86_64::structures::port::{PortRead, PortWrite};
 
-use crate::serial_println;
-
 pub const IO_ADDR_COM1: u16 = 0x3F8;
 pub const IO_ADDR_COM2: u16 = 0x2F8;
 

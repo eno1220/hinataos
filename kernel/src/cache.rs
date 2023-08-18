@@ -2,7 +2,6 @@ use core::arch::asm;
 use core::arch::x86_64::_mm_clflush;
 use x86;
 
-use crate::serial_print;
 #[allow(unused_imports)]
 use crate::{print, println, serial_println};
 
@@ -32,7 +31,7 @@ unsafe fn probe(addr: *const u8) -> u64 {
 
 #[inline(always)]
 //unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
-unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
+unsafe fn guess_bit_once(_seed: u8, buffer: *mut u8) -> u8 {
     flush_buffer(buffer);
 
     /*
@@ -48,7 +47,7 @@ unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     // 飛び先のアドレスで予測されている（CPUは）
     // それを参考にしてトレーニングを施してみる（アドレスの一部を使っている）
 
-    let p = 0x80000000 as *mut u8;
+    let _p = 0x80000000 as *mut u8;
     //buffer.add(1).write_volatile(1);
     //buffer.add((*p as usize + 1) * PAGE_SIZE).write_volatile(1);
     // カーネルへのアクセス
@@ -66,9 +65,8 @@ unsafe fn guess_bit_once(seed: u8, buffer: *mut u8) -> u8 {
     // ここに飛びたい
     (0..64)
         .min_by_key(|i| {
-            let time = probe(buffer.add((i + 1) * PAGE_SIZE));
             //serial_println!("{}: {}", i, time);
-            time
+            probe(buffer.add((i + 1) * PAGE_SIZE))
         })
         .unwrap() as u8
 }

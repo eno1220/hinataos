@@ -65,17 +65,22 @@ macro_rules! serial_println{
     ($($arg:tt)*) => ($crate::serial_print!("{}\r\n",format_args!($($arg)*)));
 }
 
-
 struct SerialLogger;
 
-impl log::Log for SerialLogger{
+impl log::Log for SerialLogger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
         metadata.level() <= log::Level::Info
     }
 
     fn log(&self, record: &log::Record) {
-        if self.enabled(record.metadata()){
-            serial_println!("[{:>5}]: {:>12}@{:>4}: {}", record.level(), record.file().unwrap(), record.line().unwrap(), record.args());
+        if self.enabled(record.metadata()) {
+            serial_println!(
+                "[{:>5}]: {:>12}@{:>4}: {}",
+                record.level(),
+                record.file().unwrap(),
+                record.line().unwrap(),
+                record.args()
+            );
         }
     }
 

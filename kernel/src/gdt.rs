@@ -7,10 +7,8 @@ use x86_64::{
 };
 
 static mut GDT: GlobalDescriptorTable = GlobalDescriptorTable::new();
-pub static mut USER_CODE_SEGEMNT: SegmentSelector = SegmentSelector(0);
 
 static mut TSS: TaskStateSegment = TaskStateSegment::new();
-static mut KERNEL_CODE_SELECTOR: SegmentSelector = SegmentSelector(0);
 static mut TSS_SELECTOR: SegmentSelector = SegmentSelector(0);
 static mut TSS_STACK: [u8; 4096 * 5] = [0; 4096 * 5];
 
@@ -18,8 +16,7 @@ pub fn init() {
     unsafe {
         TSS.interrupt_stack_table[0] =
             VirtAddr::new(TSS_STACK.as_ptr() as u64 + TSS_STACK.len() as u64);
-        // ref: mikan本 8.5-8.6
-        KERNEL_CODE_SELECTOR = GDT.add_entry(Descriptor::kernel_code_segment());
+        GDT.add_entry(Descriptor::kernel_code_segment());
         GDT.add_entry(Descriptor::kernel_data_segment());
         GDT.add_entry(Descriptor::user_code_segment());
         GDT.add_entry(Descriptor::user_data_segment());
@@ -34,12 +31,6 @@ pub fn init() {
         CS::set_reg(SegmentSelector(1 << 3));
         SS::set_reg(SegmentSelector(2 << 3));
         load_tss(TSS_SELECTOR);
-
-        // 代わりに3,4にして
-        // ユーザ
-        // GDTに書き込んだ段階でCPUの状態を書き換えることはない
-        // レジスタに書き込んだ時にCPUがメモリを呼びにいく
-        // code segment
     }
 }
 

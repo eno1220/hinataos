@@ -1,8 +1,5 @@
-use crate::memory::alloc;
-use crate::println;
-use x86::bits32::paging::Page;
 use x86_64::structures::paging::{PageTableFlags, PhysFrame};
-use x86_64::{instructions::tables, structures::paging::*, PhysAddr, VirtAddr};
+use x86_64::{structures::paging::*, PhysAddr, VirtAddr};
 
 const EMPTY_ENTRY: PageTable = PageTable::new();
 

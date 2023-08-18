@@ -1,12 +1,9 @@
-use crate::{println, serial_println};
-use core::arch::asm;
+use crate::println;
+
 use x86_64::{
     instructions::interrupts,
-    structures::idt::{
-        InterruptDescriptorTable, InterruptStackFrame, InterruptStackFrameValue, PageFaultErrorCode,
-    },
-    structures::tss::TaskStateSegment,
-    VirtAddr,
+    registers::control::Cr2,
+    structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode},
 };
 
 static mut IDT: InterruptDescriptorTable = InterruptDescriptorTable::new();
@@ -44,31 +41,21 @@ extern "x86-interrupt" fn general_protection_fault_handler(
 }
 
 extern "x86-interrupt" fn page_fault_handler(
-    mut stack_frame: InterruptStackFrame,
+    stack_frame: InterruptStackFrame,
     error_code: PageFaultErrorCode,
 ) {
-    use x86_64::registers::control::Cr2;
-
-    /*println!(
+    println!(
         "[EXCEPTION] PAGE FAULT\nAccessed Address: {:?}\nError Code: {:?}\nStack Frame: {:?}",
         Cr2::read(),
         error_code,
         stack_frame
-    );*/
+    );
 
-    let rip = &mut unsafe { stack_frame.as_mut() }
+    /*let rip = &mut unsafe { stack_frame.as_mut() }
         .extract_inner()
         .instruction_pointer;
 
-    *rip = VirtAddr::new(rip.as_u64() + 3);
-
-    //let stack_mut = unsafe{stack_frame.as_mut()};
-
-    // stackframeのinstruction pointerを書き換える
-    // rip+0xc6??してiretする
-    // 例外を起こす次の命令にもどるようにする（RIP分ずらしてiretする）
-
-    // ラベルを書いておいて（例外の次）ラベルの値を例外を起こす前に変数（レジスタ）に代入しておく、レジスタを見てRIPを書き換えて、そこに飛ばす
+    *rip = VirtAddr::new(rip.as_u64() + 3);*/
 }
 
 extern "x86-interrupt" fn double_fault_handler(
