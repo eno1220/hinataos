@@ -2,8 +2,10 @@ use crate::println;
 
 use x86_64::{
     instructions::interrupts,
+    structures::idt::{
+        InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode,
+    },
     registers::control::Cr2,
-    structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode},
 };
 
 static mut IDT: InterruptDescriptorTable = InterruptDescriptorTable::new();
@@ -27,7 +29,7 @@ pub fn init() {
 }
 
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
-    println!("[EXCEPTION] BREAKPOINT\nStack Frame: {:?}", stack_frame);
+    log::info!("[EXCEPTION] BREAKPOINT\nStack Frame: {:?}", stack_frame);
 }
 
 extern "x86-interrupt" fn general_protection_fault_handler(
