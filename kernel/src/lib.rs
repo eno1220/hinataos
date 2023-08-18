@@ -4,7 +4,6 @@
 #![no_main]
 
 pub mod cache;
-pub mod console;
 pub mod font;
 pub mod gdt;
 pub mod graphics;

@@ -4,24 +4,15 @@
 #![no_main]
 
 use common::types::{GraphicsInfo, MemoryMap};
-use core::arch::{asm, global_asm};
+use core::arch::asm;
 use core::panic::PanicInfo;
-//use kernel::console::Console;
 use kernel::gdt;
-//use kernel::graphics::PixelInfo;
 use kernel::interrupts;
 use kernel::memory;
 use kernel::paging;
-//use kernel::print::GLOBAL_POINTER;
+use kernel::graphics;
 use kernel::print::init_logger;
 use kernel::serial::{serial_init, IO_ADDR_COM1};
-use kernel::serial_println;
-use kernel::{cache, print};
-use kernel::{println, serial_print};
-use x86;
-use x86::vmx::vmcs::guest::CR4;
-use x86_64::registers::control::{Cr4, Cr4Flags};
-use x86_64::registers::segmentation::*;
 
 #[no_mangle]
 pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &MemoryMap, new_rsp: u64) {
@@ -36,15 +27,6 @@ pub extern "C" fn kernel_entry(graphics_info: &GraphicsInfo, memory_map: &Memory
         );
     }
 }
-
-// 適当なメモリを確保してスタックにする
-// スタックもユーザモードから使えるようにする
-
-// メモリ全体をユーザが読み書きできるようにする
-// スタックを切り替え（リターンアドレスをどうするかという工夫がある）
-// 別の世界だとして考える or 戻ってくるようにする（戻り先のアドレスをスタックに積んでうまくずらしてやる）
-// code segmentを書き換えると、ユーザからカーネルに戻れなくなってくる
-// EFLAGSの中にあるIOPLを切り替えるとring3からでも出力できるようになる
 
 #[no_mangle]
 extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) {
@@ -102,26 +84,17 @@ extern "C" fn halt_loop() -> ! {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("{info}");
+    log::error!("{}", info);
     loop {
         unsafe { asm!("hlt") };
     }
 }
 
 fn console_init(graphics_info: &GraphicsInfo) {
+    // todo(eno1220): 名称変更
     serial_init(IO_ADDR_COM1);
+    // todo(eno1220): 名称変更
+    graphics::init(graphics_info);
+    // todo(eno1220): 名称変更
     init_logger();
-    /*let pixel_info = PixelInfo {
-        buffer: graphics_info.frame_buffer_base() as *mut u8,
-        width: graphics_info.horizontal_resolution(),
-        height: graphics_info.vertical_resolution(),
-        pixels_per_line: graphics_info.pixels_per_scan_line(),
-    };
-    let console = Console::new(
-        pixel_info,
-        graphics_info.horizontal_resolution(),
-        graphics_info.vertical_resolution(),
-        graphics_info.pixels_per_scan_line(),
-    );
-    GLOBAL_POINTER.set_console(console);*/
 }
