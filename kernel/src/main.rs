@@ -33,7 +33,11 @@ extern "C" fn kernel_main(graphics_info: &GraphicsInfo, memory_map: &MemoryMap) 
     console_init(graphics_info);
     gdt::init();
     interrupts::init();
+    // todo:fix
     memory::init(memory_map);
+    /*unsafe{
+    MEMORY_MANAGER.lock().init(memory_map);
+    }*/
     paging::init();
     log::info!("Hello HinataOS{}", "!");
 

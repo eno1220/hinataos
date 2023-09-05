@@ -133,3 +133,90 @@ impl BitmapMemoryManager {
         self.range_end = range_end;
     }
 }
+
+
+// todo(eno1220): メモリの情報を取得する→メモリマップ用の領域をallocする→allocしたメモリを使ってメモリマップを作成する
+
+/* 
+use common::types::{is_available, MemoryMap};
+use spin::Mutex;
+
+pub struct BitmapMemoryManager {
+    // todo(eno1220): 動的に決定する
+    bitmap_address: usize,
+    length: usize,
+}
+
+const BITS_PER_MAP_LINE: usize = 64;
+
+pub static mut MEMORY_MANAGER: Mutex<BitmapMemoryManager> = Mutex::new(BitmapMemoryManager::new());
+
+impl BitmapMemoryManager{
+    pub const fn new() -> Self{
+        Self{
+            bitmap_address: 0,
+            length: 0,
+        }
+    }
+
+    pub fn init(&mut self, memory_map: &MemoryMap){
+        let mut total_pages = 0;
+        // todo: fix
+        for i in 0..memory_map.length{
+            total_pages += memory_map.buffer[i].page_count as usize;
+        }
+        let bitmap_length = total_pages / BITS_PER_MAP_LINE;
+
+        let mut bitmap_address = 0;
+        for i in 0..memory_map.length{
+            let memory_descriptor = memory_map.buffer[i];
+            // todo: fix
+            if is_available(memory_descriptor.ty) && (memory_descriptor.page_count * 4096) as usize >= bitmap_length{
+                bitmap_address = memory_descriptor.phys_start as usize;
+                log::info!("bitmap_address: {}",bitmap_address);
+                log::info!("{:?}" ,memory_descriptor);
+                break;
+            }
+        }
+
+        self.bitmap_address = bitmap_address;
+        self.length = bitmap_length;
+
+        for i in 0..memory_map.length{
+            let memory_discriptor = memory_map.buffer[i];
+            if !is_available(memory_discriptor.ty){
+                self.mark_allocated(memory_discriptor.phys_start as usize / 4096, memory_discriptor.page_count as usize);
+                log::info!("phys_start: {}",memory_discriptor.phys_start as usize / 4096);
+                log::info!("page_count: {}",memory_discriptor.page_count as usize);
+            }
+        }
+
+        // 考える
+
+        self.mark_allocated(self.bitmap_address / 4096, bitmap_length / 64 / 4096);
+        log::info!("bitmap_addr: {}",self.bitmap_address);
+        log::info!("length: {}",self.length);
+    }
+
+    fn mark_allocated(&mut self, start_frame: usize, num: usize) {
+        for i in 0..num {
+            self.set_bit_allocated(start_frame + i);
+        }
+    }
+
+    fn set_bit_allocated(&mut self, frame_id: usize) {
+        let line = frame_id / BITS_PER_MAP_LINE;
+        let bit = frame_id % BITS_PER_MAP_LINE;
+            unsafe{
+                *((self.bitmap_address + line * 8) as *mut u64) |= 1 << bit;
+            }
+    }
+
+    fn set_bit_deallocated(&mut self, frame_id: usize) {
+        let line = frame_id / BITS_PER_MAP_LINE;
+        let bit = frame_id % BITS_PER_MAP_LINE;
+            unsafe{
+                *((self.bitmap_address + line * 8) as *mut u64) &= !(1 << bit);
+            }
+    }
+}*/

@@ -36,6 +36,7 @@ extern "x86-interrupt" fn general_protection_fault_handler(
     stack_frame: InterruptStackFrame,
     error_code: u64,
 ) {
+    // https://wiki.osdev.org/Exceptions#Selector_Error_Code
     panic!(
         "[EXCEPTION] GENERAL PROTECTION FAULT\nError Code: {:?}\nStack Frame: {:?}",
         error_code, stack_frame
@@ -52,12 +53,6 @@ extern "x86-interrupt" fn page_fault_handler(
         error_code,
         stack_frame
     );
-
-    /*let rip = &mut unsafe { stack_frame.as_mut() }
-        .extract_inner()
-        .instruction_pointer;
-
-    *rip = VirtAddr::new(rip.as_u64() + 3);*/
 }
 
 extern "x86-interrupt" fn double_fault_handler(

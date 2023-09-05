@@ -8,6 +8,7 @@ use x86_64::{
 
 static mut GDT: GlobalDescriptorTable = GlobalDescriptorTable::new();
 
+// todo(eno1220): TSSをまじめに実装する
 static mut TSS: TaskStateSegment = TaskStateSegment::new();
 static mut TSS_SELECTOR: SegmentSelector = SegmentSelector(0);
 static mut TSS_STACK: [u8; 4096 * 5] = [0; 4096 * 5];

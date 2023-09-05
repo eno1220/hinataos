@@ -4,6 +4,7 @@
 extern crate alloc;
 
 use alloc::vec;
+use alloc::boxed::Box;
 use common::types::{GraphicsInfo, PixelFormat, MemoryMap as CommonMemoryMap};
 use elf::{endian::AnyEndian, ElfBytes};
 use uefi::table::boot::{MemoryMap, MemoryDescriptor};
